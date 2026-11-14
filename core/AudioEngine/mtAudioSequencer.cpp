@@ -2206,7 +2206,7 @@ void playerEngine::initEnvelopesParameters(uint8_t n, envelopeGenerator::strEnv*
 AUDIO_CORE_RAM bool playerEngine::isActiveEnvelope(uint8_t type)
 {
     return (
-      (mtProject.instrument[currentInstrument_idx].envelope[type].enable) ||
+      (mtProject.instrument[currentInstrument_idx].isEnvEnabled(type)) ||
       (trackControlParameter[(int)controlType::performanceMode][envelopesControlValue[type]]) ||
       (trackControlParameter[(int)controlType::sequencerMode][envelopesControlValue[type]]) ||
       (trackControlParameter[(int)controlType::sequencerMode2][envelopesControlValue[type]]));

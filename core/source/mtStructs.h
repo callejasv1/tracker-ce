@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "mtEnvelopeGenerator.h"
+#include "synth_osc.h"
 #include <stdint.h>
 
 //=====================================================================
@@ -393,6 +394,7 @@ enum instrumentPlayMode
     playModeBeatSlice,
     playModeWavetable, // tylko na uzytek interface - sample type obsługuje to w silniku
     playModeGranular,
+    playModeSynth,
     playModeCount
 };
 
@@ -423,9 +425,31 @@ enum envelopesType
     // playModeGranular are mutually exclusive, preserving the 372-byte strInstrument .pti layout.
     envGranLen = envWtPos,
     envGranPos,
+    // In non-granular / synth modes, slot 4 serves as the freely assignable Mod Envelope/LFO
+    envMod = envGranPos,
     envFinetune,
 
     envMax
+};
+
+// Freely assignable modulation destinations
+enum enModDestination : uint8_t
+{
+    modDestOff = 0,
+    modDestResonance,
+    modDestCutoff,
+    modDestOverdrive,
+    modDestBitDepth,
+    modDestDelaySend,
+    modDestReverbSend,
+    modDestPanning,
+    modDestFinetune,
+    modDestVolume,
+    modDestPulseWidth,
+    modDestDetune,
+    modDestSubLevel,
+    modDestNoiseLevel,
+    modDestCount
 };
 
 // UI destinations shown in Instrument Automation (2/2)
@@ -438,6 +462,7 @@ enum enAutomationDest : uint8_t
     autoDestGranPos,
     autoDestGranLen,
     autoDestFinetune,
+    autoDestMod,
 
     autoDestCount
 };
@@ -453,6 +478,7 @@ static constexpr envelopesType automationDestToEnvSlot(uint8_t destIdx)
         case autoDestGranPos: return envGranPos;
         case autoDestGranLen: return envGranLen;
         case autoDestFinetune: return envFinetune;
+        case autoDestMod: return envMod;
         default: return envAmp;
     }
 }
@@ -651,6 +677,7 @@ struct strInstrument
     int8_t fineTune;
 
     uint8_t volume;
+    uint8_t modDestination; // Replaces compiler alignment padding at offset 257; 100% .pti layout compatible
 
     uint16_t glide;
     int16_t panning; // = 50;
@@ -690,11 +717,42 @@ struct strInstrument
         return (envelope[envGranLen].enable & kEnvEnableGranLenBit) != 0;
     }
 
+    using strSynthParams = synthosc::Params;
+    static_assert(sizeof(strSynthParams) <= sizeof(slices), "strSynthParams must fit in slices overlay");
+
+    strSynthParams& synthParams()
+    {
+        void* ptr = slices;
+        return *static_cast<strSynthParams*>(ptr);
+    }
+    const strSynthParams& synthParams() const
+    {
+        const void* ptr = slices;
+        return *static_cast<const strSynthParams*>(ptr);
+    }
+    void initSynthParamsDefault()
+    {
+        auto& sp = synthParams();
+        sp.mode = 0;
+        sp.waveA = 0;
+        sp.waveB = 0;
+        sp.semiB = 0;
+        sp.detune = 12;
+        sp.levelB = 75;
+        sp.sub = 25;
+        sp.noise = 0;
+        sp.pw = 50;
+    }
+
     bool isEnvEnabled(uint8_t envIdx) const
     {
         if (envIdx == envWtPos)
         {
             return (playMode == playModeGranular) ? isGranLenEnvEnabled() : isWtPosEnvEnabled();
+        }
+        if (envIdx == envGranPos && playMode != playModeGranular)
+        {
+            return (modDestination != modDestOff) && (envelope[envGranPos].enable != 0);
         }
         return envelope[envIdx].enable != 0;
     }
@@ -762,6 +820,7 @@ const strInstrument defaultInstrumentParams = {
     .tune = 0,
     .fineTune = 0,
     .volume = 50,
+    .modDestination = 0,
     .glide = 0,
     .panning = 50,
     .delaySend = 0,

@@ -29,10 +29,13 @@ AUDIO_CORE_RAM void playerEngine::update()
       (mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWavetable) ||
       (mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable) ||
       ((mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWaveFile) &&
-       (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular));
+       (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)) ||
+      (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth);
     envelopeCondition[envGranPos] =
       ((mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWaveFile) &&
-       (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular));
+       (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)) ||
+      (mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+       mtProject.instrument[currentInstrument_idx].modDestination != modDestOff);
     envelopeCondition[envFinetune] = true;
     //*******
     for (uint8_t i = envAmp; i < ACTIVE_ENVELOPES; i++)
@@ -184,6 +187,31 @@ inline void playerEngine::handleUpdateEnvelope(uint8_t type, bool enableConditio
                     {
                         refreshRegister |= GRANULAR_LEN_SEND_MASK;
                     }
+                    else if (type == envMod &&
+                             mtProject.instrument[currentInstrument_idx].playMode != playModeGranular)
+                    {
+                        if (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth)
+                        {
+                            int16_t synthModVal = (int16_t)(currentEnvelopeModification[envMod] * 100.0f);
+                            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+                            {
+                                playMemPtr[channel]->setSynthMod(synthModVal);
+                            }
+                        }
+                        switch (mtProject.instrument[currentInstrument_idx].modDestination)
+                        {
+                            case modDestResonance: refreshRegister |= RESONANCE_MASK; break;
+                            case modDestCutoff: refreshRegister |= CUTOFF_MASK; break;
+                            case modDestOverdrive: refreshRegister |= OVERDRIVE_MASK; break;
+                            case modDestBitDepth: refreshRegister |= BIT_DEPTH_MASK; break;
+                            case modDestDelaySend: refreshRegister |= DELAY_SEND_MASK; break;
+                            case modDestReverbSend: refreshRegister |= REVERB_SEND_MASK; break;
+                            case modDestPanning: refreshRegister |= PANNING_MASK; break;
+                            case modDestFinetune: refreshRegister |= FINETUNE_MASK; break;
+                            case modDestVolume: refreshRegister |= VOLUME_MASK; break;
+                            default: break;
+                        }
+                    }
                     else
                     {
                         refreshRegister |= envTargetRefreshMask[type];
@@ -254,6 +282,12 @@ inline void playerEngine::handleUpdateRefreshFinetune()
 
         int32_t localFinetuneMod =
           currentEnvelopeModification[envFinetune] * MAX_INSTRUMENT_FINETUNE;
+        if (mtProject.instrument[currentInstrument_idx].modDestination == modDestFinetune &&
+            mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+            mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod))
+        {
+            localFinetuneMod += currentEnvelopeModification[envMod] * MAX_INSTRUMENT_FINETUNE;
+        }
 
         int16_t localFinetune = 0;
 
@@ -338,6 +372,12 @@ inline void playerEngine::handleUpdateRefreshPanning()
         }
 
         int32_t localPanningMod = currentEnvelopeModification[envPan] * PANNING_MAX;
+        if (mtProject.instrument[currentInstrument_idx].modDestination == modDestPanning &&
+            mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+            mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod))
+        {
+            localPanningMod += currentEnvelopeModification[envMod] * PANNING_MAX;
+        }
 
         int16_t localPanning = 0;
 
@@ -393,6 +433,13 @@ inline void playerEngine::handleUpdateRefreshCutoff()
             localCutoff = mtProject.instrument[currentInstrument_idx].cutOff;
         }
 
+        if (mtProject.instrument[currentInstrument_idx].modDestination == modDestCutoff &&
+            mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+            mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod))
+        {
+            localCutoff += currentEnvelopeModification[envMod];
+        }
+
         if (localCutoff + currentEnvelopeModification[envCutoff] < 0.0f)
             localCutoff = 0.0f;
         else if (localCutoff + currentEnvelopeModification[envCutoff] > 1.0f)
@@ -408,7 +455,16 @@ inline void playerEngine::handleUpdateRefreshResonance()
     if (refreshRegister & RESONANCE_MASK)
     {
         refreshRegister &= (~RESONANCE_MASK);
-        modResonance(mtProject.instrument[currentInstrument_idx].resonance);
+        float res = mtProject.instrument[currentInstrument_idx].resonance;
+        if (mtProject.instrument[currentInstrument_idx].modDestination == modDestResonance &&
+            mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+            mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod))
+        {
+            res += currentEnvelopeModification[envMod];
+            if (res < 0.0f) res = 0.0f;
+            else if (res > 1.0f) res = 1.0f;
+        }
+        modResonance(res);
     }
 }
 void playerEngine::handleUpdateRefreshDelay()
@@ -433,6 +489,14 @@ void playerEngine::handleUpdateRefreshDelay()
         {
             localDelaySend = clamp<int>(
               (int)localDelaySend + (int)performanceMod.delaySend, (int)SEND_MIN, (int)SEND_MAX);
+        }
+
+        if (mtProject.instrument[currentInstrument_idx].modDestination == modDestDelaySend &&
+            mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+            mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod))
+        {
+            int send = (int)localDelaySend + (int)(currentEnvelopeModification[envMod] * 100.0f);
+            localDelaySend = clamp<int>(send, (int)SEND_MIN, (int)SEND_MAX);
         }
 
         if (((muteState == MUTE_DISABLE) && (onlyDelayMuteState == MUTE_DISABLE)) ||
@@ -473,6 +537,14 @@ void playerEngine::handleUpdateRefreshReverb()
               (int)localReverbSend + (int)performanceMod.reverbSend, (int)SEND_MIN, (int)SEND_MAX);
         }
 
+        if (mtProject.instrument[currentInstrument_idx].modDestination == modDestReverbSend &&
+            mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+            mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod))
+        {
+            int send = (int)localReverbSend + (int)(currentEnvelopeModification[envMod] * 100.0f);
+            localReverbSend = clamp<int>(send, (int)SEND_MIN, (int)SEND_MAX);
+        }
+
         if (((muteState == 0) && (onlyReverbMuteState == 0)) ||
             ((engine.forceReverbSend == 1) && !mtProject.values.trackMute[nChannel]))
         {
@@ -508,6 +580,14 @@ inline void playerEngine::handleUpdateRefreshOverdrive()
             overdrive = mtProject.instrument[currentInstrument_idx].overdrive;
         }
 
+        if (mtProject.instrument[currentInstrument_idx].modDestination == modDestOverdrive &&
+            mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+            mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod))
+        {
+            int drive = (int)overdrive + (int)(currentEnvelopeModification[envMod] * 100.0f);
+            overdrive = clamp<int>(drive, 0, 100);
+        }
+
         modOverdrive(overdrive);
     }
 }
@@ -533,6 +613,14 @@ inline void playerEngine::handleUpdateRefreshBitDepth()
         else
         {
             bitDepth = mtProject.instrument[currentInstrument_idx].bitDepth;
+        }
+
+        if (mtProject.instrument[currentInstrument_idx].modDestination == modDestBitDepth &&
+            mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
+            mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod))
+        {
+            int bd = (int)bitDepth - (int)(currentEnvelopeModification[envMod] * 12.0f);
+            bitDepth = clamp<int>(bd, 4, 16);
         }
 
         modBitDepth(bitDepth);
@@ -577,24 +665,35 @@ inline void playerEngine::handleUpdateRefreshWtPos()
             localWtPos = mtProject.instrument[currentInstrument_idx].wavetableCurrentWindow;
         }
 
-        if ((int)(localWtPos + localWtPosisionMod) < 0)
+        if (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth)
         {
-            localWtPos = 0;
-        }
-        else if ((int)(localWtPos + localWtPosisionMod) >
-                 (int)(mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber -
-                       1))
-        {
-            localWtPos =
-              mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber - 1;
+            int16_t pw = (int16_t)(currentEnvelopeModification[envWtPos] * 100.0f);
+            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+            {
+                playMemPtr[channel]->setSynthPwMod(pw);
+            }
         }
         else
-            localWtPos += localWtPosisionMod;
-
-        for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
         {
-            playMemPtr[channel]->setWavetableWindow(localWtPos);
-            playMemPtr[channel]->setForcedWavetableWindow(localWtPos);
+            if ((int)(localWtPos + localWtPosisionMod) < 0)
+            {
+                localWtPos = 0;
+            }
+            else if ((int)(localWtPos + localWtPosisionMod) >
+                     (int)(mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber -
+                           1))
+            {
+                localWtPos =
+                  mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber - 1;
+            }
+            else
+                localWtPos += localWtPosisionMod;
+
+            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+            {
+                playMemPtr[channel]->setWavetableWindow(localWtPos);
+                playMemPtr[channel]->setForcedWavetableWindow(localWtPos);
+            }
         }
     }
 }
@@ -812,8 +911,10 @@ inline void playerEngine::handleUpdateRefreshWtPosLFO()
         const bool isWavetable =
           (mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWavetable) ||
           (mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable);
+        const bool isSynth =
+          (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth);
 
-        if (isWavetable || isGranular)
+        if (isWavetable || isGranular || isSynth)
         {
             if ((mtProject.instrument[currentInstrument_idx].isEnvEnabled(envWtPos)) &&
                 (!trackControlParameter[(int)controlType::sequencerMode]
@@ -855,7 +956,7 @@ inline void playerEngine::handleUpdateRefreshWtPosLFO()
                 currentEnvelopeModification[envGranLen] = 0;
                 refreshRegister |= GRANULAR_LEN_SEND_MASK;
             }
-            else if (isWavetable)
+            else if (isWavetable || isSynth)
             {
                 currentEnvelopeModification[envWtPos] = 0;
                 refreshRegister |= WT_POS_SEND_MASK;
@@ -868,10 +969,16 @@ inline void playerEngine::handleUpdateRefreshGranPosLFO()
     if (refreshRegister & LFO_GRAN_POS_SEND_MASK)
     {
         refreshRegister &= (~LFO_GRAN_POS_SEND_MASK);
-        if ((mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWaveFile) &&
-            (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular))
+        const bool isGranular =
+          (mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWaveFile) &&
+          (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular);
+        const bool isModActive =
+          (mtProject.instrument[currentInstrument_idx].playMode != playModeGranular) &&
+          (mtProject.instrument[currentInstrument_idx].modDestination != modDestOff);
+
+        if (isGranular || isModActive)
         {
-            if ((mtProject.instrument[currentInstrument_idx].envelope[envGranPos].enable) &&
+            if ((mtProject.instrument[currentInstrument_idx].isEnvEnabled(envGranPos)) &&
                 (!trackControlParameter[(int)controlType::sequencerMode]
                                        [(int)parameterList::lfoGranularPosition]) &&
                 (!trackControlParameter[(int)controlType::sequencerMode2]
@@ -906,6 +1013,22 @@ inline void playerEngine::handleUpdateRefreshGranPosLFO()
                       &mtProject.instrument[currentInstrument_idx].envelope[envGranPos]);
                     envelopePtr[envGranPos]->setIsRandom(false);
                 }
+            }
+            else if (isModActive)
+            {
+                currentEnvelopeModification[envGranPos] = 0;
+                for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+                {
+                    playMemPtr[channel]->setSynthMod(0);
+                }
+            }
+        }
+        else if (mtProject.instrument[currentInstrument_idx].playMode != playModeGranular)
+        {
+            currentEnvelopeModification[envGranPos] = 0;
+            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+            {
+                playMemPtr[channel]->setSynthMod(0);
             }
         }
     }

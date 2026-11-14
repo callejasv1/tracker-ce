@@ -287,6 +287,7 @@ class cInstrumentEditor : public ModuleBase
     void showWtSustain();
 
     static void changeSelectedEnv(int16_t value);
+    static void changeModDestination(int16_t value);
     static void changeSelectedEnvState(int16_t value);
     static void changeSelectedEnvAttack(int16_t value);
     static void changeSelectedEnvDecay(int16_t value);

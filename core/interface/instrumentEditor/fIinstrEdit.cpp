@@ -467,7 +467,12 @@ void cInstrumentEditor::changeParamValue(int value, ValueChangeSource source)
             case 5: cInstrumentEditor::changeFilterCutoff(value); break;
             case 6: cInstrumentEditor::changeFilterResonance(value); break;
 
-            case 10: cInstrumentEditor::changeSelectedEnv(invert ? -value : value); break;
+            case 10:
+                if (IE->selectedEnvelope == autoDestMod && IE->buttons->isButtonPressed(interfaceButtonShift))
+                    cInstrumentEditor::changeModDestination(invert ? -value : value);
+                else
+                    cInstrumentEditor::changeSelectedEnv(invert ? -value : value);
+                break;
             case 11: cInstrumentEditor::changeSelectedEnvState(invert ? -value : value); break;
             case 12:
             {
@@ -628,11 +633,21 @@ static void functSelectParams(uint8_t button, uint8_t state)
 
             case 10:
                 if (lastSelectedPlace == 0)
-                    cInstrumentEditor::changeSelectedEnv(-1);
+                {
+                    if (IE->selectedEnvelope == autoDestMod && IE->buttons->isButtonPressed(interfaceButtonShift))
+                        cInstrumentEditor::changeModDestination(-1);
+                    else
+                        cInstrumentEditor::changeSelectedEnv(-1);
+                }
                 break;
             case 11:
                 if (lastSelectedPlace == 0)
-                    cInstrumentEditor::changeSelectedEnv(1);
+                {
+                    if (IE->selectedEnvelope == autoDestMod && IE->buttons->isButtonPressed(interfaceButtonShift))
+                        cInstrumentEditor::changeModDestination(1);
+                    else
+                        cInstrumentEditor::changeSelectedEnv(1);
+                }
                 break;
             case 12: break;
             case 13:
@@ -1077,6 +1092,31 @@ void cInstrumentEditor::changeSelectedEnv(int16_t value)
 
     IE->showInstrumentEnv();
 
+    IE->showEnvList();
+}
+
+void cInstrumentEditor::changeModDestination(int16_t value)
+{
+    if (IE->isAnyNodeActive() || !IE->editorInstrument)
+    {
+        return;
+    }
+
+    int newDest = (int)IE->editorInstrument->modDestination + (value > 0 ? 1 : -1);
+    if (newDest < 0)
+        newDest = modDestCount - 1;
+    else if (newDest >= modDestCount)
+        newDest = 0;
+
+    IE->editorInstrument->modDestination = (uint8_t)newDest;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+
+    for (int i = 0; i < 8; i++)
+    {
+        instrumentPlayer[i].setRefreshBit(LFO_GRAN_POS_SEND_MASK);
+    }
+
+    IE->showInstrumentEnv();
     IE->showEnvList();
 }
 

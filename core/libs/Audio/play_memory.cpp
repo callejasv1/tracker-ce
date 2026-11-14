@@ -149,6 +149,7 @@ AUDIO_CORE_RAM void AudioPlayMemory::update(void)
         case playModeBeatSlice: block = updateBeatSlice(); break;
         case playModeGranular: block = updateGranular(); break;
         case playModeWavetable: block = updateWavetable(); break;
+        case playModeSynth: block = updateSynth(); break;
         default: break;
     }
 
@@ -195,6 +196,7 @@ AUDIO_CORE_FLASH uint8_t AudioPlayMemory::play(uint8_t instrIdx, int8_t note)
         case playModeBeatSlice: playBeatSlice(instrIdx, note); break;
         case playModeGranular: playGranular(instrIdx, note); break;
         case playModeWavetable: playWavetable(instrIdx, note); break;
+        case playModeSynth: playSynth(instrIdx, note); break;
         default: return 0;
     }
 

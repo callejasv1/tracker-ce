@@ -192,6 +192,7 @@ void cSamplePlayback::start(uint32_t options)
               mtProject.instrument[mtProject.values.lastUsedInstrument].playMode)
         {
             sliceScreenMode2 = false;
+            synthScreenMode2 = false;
             SP->cancelMultiFrame();
             SP->clearAllNodes();
             SP->selectedPlace = 6;
@@ -199,6 +200,14 @@ void cSamplePlayback::start(uint32_t options)
         }
 
         editorInstrument = &mtProject.instrument[mtProject.values.lastUsedInstrument];
+        if (editorInstrument->playMode == playModeSynth)
+        {
+            auto& sp = editorInstrument->synthParams();
+            if (sp.waveA >= synthosc::kWaveCount || sp.mode >= synthosc::kModeCount || (sp.levelB == 0 && sp.sub == 0))
+            {
+                editorInstrument->initSynthParamsDefault();
+            }
+        }
         loadedInstrumentType = editorInstrument->sample.type;
 
         if (loadedInstrumentType == mtSampleTypeWaveFile)
@@ -767,7 +776,8 @@ static void functButton1(uint8_t state)
         }
     }
     else if (SP->editorInstrument->playMode == playModeGranular ||
-             SP->editorInstrument->playMode == playModeWavetable)
+             SP->editorInstrument->playMode == playModeWavetable ||
+             SP->editorInstrument->playMode == playModeSynth)
     {
         if (state == buttonPress || state == UINT8_MAX)
         {
@@ -854,7 +864,8 @@ static void functButton2(uint8_t state)
         }
     }
     else if (SP->editorInstrument->playMode == playModeWavetable ||
-             SP->editorInstrument->playMode == playModeGranular)
+             SP->editorInstrument->playMode == playModeGranular ||
+             SP->editorInstrument->playMode == playModeSynth)
     {
         if (state == buttonPress || state == UINT8_MAX)
         {
@@ -954,7 +965,8 @@ static void functButton3(uint8_t state)
         }
         return;
     }
-    else if (SP->editorInstrument->playMode == playModeGranular)
+    else if (SP->editorInstrument->playMode == playModeGranular ||
+             SP->editorInstrument->playMode == playModeSynth)
     {
         if (state == buttonPress || state == UINT8_MAX)
         {
@@ -1053,7 +1065,8 @@ static void functButton4(uint8_t state)
             SP->selectedPlace = 4;
         }
     }
-    else if (SP->editorInstrument->playMode == playModeGranular)
+    else if (SP->editorInstrument->playMode == playModeGranular ||
+             SP->editorInstrument->playMode == playModeSynth)
     {
         if (state == buttonPress || state == UINT8_MAX)
         {
@@ -1130,6 +1143,12 @@ static void functButton5()
     {
         return;
     }
+    else if (SP->editorInstrument->playMode == playModeSynth)
+    {
+        SP->synthScreenMode2 = !SP->synthScreenMode2;
+        SP->showDefaultScreen();
+        return;
+    }
     else if (SP->editorInstrument->playMode == playModeBeatSlice ||
              SP->editorInstrument->playMode == playModeSlice)
     {
@@ -1202,7 +1221,14 @@ static void functEncoder(int16_t value)
             }
             case 1:
             {
-                if (SP->loadedInstrumentType == mtSampleTypeWavetable)
+                if (SP->editorInstrument->playMode == playModeSynth)
+                {
+                    if (!SP->synthScreenMode2)
+                        SP->modSynthMode(value);
+                    else
+                        SP->modSynthSemiB(value);
+                }
+                else if (SP->loadedInstrumentType == mtSampleTypeWavetable)
                 {
                     modWavetablePostion(value);
                 }
@@ -1220,6 +1246,15 @@ static void functEncoder(int16_t value)
             }
             case 2:
             {
+                if (SP->editorInstrument->playMode == playModeSynth)
+                {
+                    if (!SP->synthScreenMode2)
+                        SP->modSynthOscA(value);
+                    else
+                        SP->modSynthPW(value);
+                    return;
+                }
+
                 if (SP->slice2ndScreenActive())
                 {
                     SP->modEqualSliceNumber(value);
@@ -1243,6 +1278,15 @@ static void functEncoder(int16_t value)
             }
             case 3:
             {
+                if (SP->editorInstrument->playMode == playModeSynth)
+                {
+                    if (!SP->synthScreenMode2)
+                        SP->modSynthOscB(value);
+                    else
+                        SP->modSynthSub(value);
+                    return;
+                }
+
                 if (SP->slice2ndScreenActive())
                 {
                     SP->modSlicePlayThru(value);
@@ -1256,6 +1300,15 @@ static void functEncoder(int16_t value)
             }
             case 4:
             {
+                if (SP->editorInstrument->playMode == playModeSynth)
+                {
+                    if (!SP->synthScreenMode2)
+                        SP->modSynthDetune(value);
+                    else
+                        SP->modSynthNoise(value);
+                    return;
+                }
+
                 if ((SP->editorInstrument->playMode == playModeSlice) ||
                     (SP->editorInstrument->playMode == playModeBeatSlice))
                 {
@@ -1273,7 +1326,15 @@ static void functEncoder(int16_t value)
             }
             case 5:
             {
-                if ((SP->editorInstrument->playMode != playModeSlice) &&
+                if (SP->editorInstrument->playMode == playModeSynth)
+                {
+                    if (value != 0)
+                    {
+                        SP->synthScreenMode2 = !SP->synthScreenMode2;
+                        SP->showDefaultScreen();
+                    }
+                }
+                else if ((SP->editorInstrument->playMode != playModeSlice) &&
                     (SP->editorInstrument->playMode != playModeBeatSlice))
                 {
                     changeZoom(value);
@@ -1312,7 +1373,8 @@ static void functLeft()
         }
         case 2:
         {
-            if (SP->editorInstrument->playMode == playModeGranular)
+            if (SP->editorInstrument->playMode == playModeGranular ||
+                SP->editorInstrument->playMode == playModeSynth)
             {
                 SP->selectedPlace = 1;
             }
@@ -1328,7 +1390,8 @@ static void functLeft()
             {
                 functButton1(UINT8_MAX);
             }
-            else if (SP->editorInstrument->playMode == playModeGranular)
+            else if (SP->editorInstrument->playMode == playModeGranular ||
+                     SP->editorInstrument->playMode == playModeSynth)
             {
                 SP->selectedPlace = 2;
             }
@@ -1356,7 +1419,8 @@ static void functLeft()
                     SP->selectedPlace = 1;
                 }
             }
-            else if (SP->editorInstrument->playMode == playModeGranular)
+            else if (SP->editorInstrument->playMode == playModeGranular ||
+                     SP->editorInstrument->playMode == playModeSynth)
             {
                 SP->selectedPlace = 3;
             }
@@ -1376,6 +1440,10 @@ static void functLeft()
             else if (SP->editorInstrument->playMode == playModeWavetable)
             {
                 SP->selectedPlace = 2;
+            }
+            else if (SP->editorInstrument->playMode == playModeSynth)
+            {
+                SP->selectedPlace = 4;
             }
             else
             {
@@ -1405,6 +1473,10 @@ static void functLeft()
             {
                 SP->selectedPlace = 4;
             }
+            else if (SP->editorInstrument->playMode == playModeSynth)
+            {
+                SP->selectedPlace = 5;
+            }
             else
             {
                 SP->selectedPlace = 5;
@@ -1429,7 +1501,8 @@ static void functRight()
         case 0:
         {
             if ((SP->editorInstrument->playMode == playModeSlice) ||
-                (SP->editorInstrument->playMode == playModeBeatSlice))
+                (SP->editorInstrument->playMode == playModeBeatSlice) ||
+                (SP->editorInstrument->playMode == playModeSynth))
             {
                 SP->selectedPlace = 1;
             }
@@ -1450,7 +1523,8 @@ static void functRight()
             {
                 functButton4(UINT8_MAX);
             }
-            else if (SP->editorInstrument->playMode == playModeGranular)
+            else if (SP->editorInstrument->playMode == playModeGranular ||
+                     SP->editorInstrument->playMode == playModeSynth)
             {
                 SP->selectedPlace = 2;
             }
@@ -1471,7 +1545,8 @@ static void functRight()
             {
                 SP->selectedPlace = SP->sliceScreenMode2 ? 3 : 6;
             }
-            else if (SP->editorInstrument->playMode == playModeGranular)
+            else if (SP->editorInstrument->playMode == playModeGranular ||
+                     SP->editorInstrument->playMode == playModeSynth)
             {
                 SP->selectedPlace = 3;
             }
@@ -1492,7 +1567,8 @@ static void functRight()
             {
                 SP->selectedPlace = 6;
             }
-            else if (SP->editorInstrument->playMode == playModeGranular)
+            else if (SP->editorInstrument->playMode == playModeGranular ||
+                     SP->editorInstrument->playMode == playModeSynth)
             {
                 SP->selectedPlace = 4;
             }
@@ -1512,6 +1588,10 @@ static void functRight()
             else if (SP->editorInstrument->playMode == playModeGranular)
             {
                 SP->selectedPlace = 6;
+            }
+            else if (SP->editorInstrument->playMode == playModeSynth)
+            {
+                SP->selectedPlace = 5;
             }
             else
             {
@@ -1535,6 +1615,10 @@ static void functUp()
     if (SP->frameData.multiSelActiveNum != 0)
     {
         SP->stepThroughNodes(1);
+    }
+    else if (SP->editorInstrument->playMode == playModeSynth)
+    {
+        functEncoder(1);
     }
     else
     {
@@ -1637,6 +1721,10 @@ static void functDown()
     if (SP->frameData.multiSelActiveNum != 0)
     {
         SP->stepThroughNodes(-1);
+    }
+    else if (SP->editorInstrument->playMode == playModeSynth)
+    {
+        functEncoder(-1);
     }
     else
     {
@@ -1925,6 +2013,16 @@ static void changePlayModeSelection(int16_t value)
     }
 
     SP->sliceScreenMode2 = false;
+    SP->synthScreenMode2 = false;
+
+    if (SP->editorInstrument->playMode == playModeSynth)
+    {
+        auto& sp = SP->editorInstrument->synthParams();
+        if (sp.waveA >= synthosc::kWaveCount || sp.mode >= synthosc::kModeCount || (sp.levelB == 0 && sp.sub == 0))
+        {
+            SP->editorInstrument->initSynthParamsDefault();
+        }
+    }
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
@@ -3430,4 +3528,100 @@ static void functMenu(uint8_t state)
     {
         mtMenuPopup.hideModulePopup(SP);
     }
+}
+
+void cSamplePlayback::modSynthMode(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newMode = (int)sp.mode + (value > 0 ? 1 : -1);
+    if (newMode < 0) newMode = 0;
+    if (newMode >= synthosc::kModeCount) newMode = synthosc::kModeCount - 1;
+    sp.mode = (uint8_t)newMode;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
+}
+
+void cSamplePlayback::modSynthOscA(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newWave = (int)sp.waveA + (value > 0 ? 1 : -1);
+    if (newWave < 0) newWave = 0;
+    if (newWave >= synthosc::kWaveCount) newWave = synthosc::kWaveCount - 1;
+    sp.waveA = (uint8_t)newWave;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
+}
+
+void cSamplePlayback::modSynthOscB(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newWave = (int)sp.waveB + (value > 0 ? 1 : -1);
+    if (newWave < 0) newWave = 0;
+    if (newWave >= synthosc::kWaveCount) newWave = synthosc::kWaveCount - 1;
+    sp.waveB = (uint8_t)newWave;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
+}
+
+void cSamplePlayback::modSynthDetune(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newDetune = (int)sp.detune + value;
+    if (newDetune < 0) newDetune = 0;
+    if (newDetune > 100) newDetune = 100;
+    sp.detune = (uint8_t)newDetune;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
+}
+
+void cSamplePlayback::modSynthSemiB(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newSemi = (int)sp.semiB + value;
+    if (newSemi < synthosc::kMinSemi) newSemi = synthosc::kMinSemi;
+    if (newSemi > synthosc::kMaxSemi) newSemi = synthosc::kMaxSemi;
+    sp.semiB = (int8_t)newSemi;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
+}
+
+void cSamplePlayback::modSynthPW(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newPW = (int)sp.pw + value;
+    if (newPW < 0) newPW = 0;
+    if (newPW > 100) newPW = 100;
+    sp.pw = (uint8_t)newPW;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
+}
+
+void cSamplePlayback::modSynthSub(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newSub = (int)sp.sub + value;
+    if (newSub < 0) newSub = 0;
+    if (newSub > 100) newSub = 100;
+    sp.sub = (uint8_t)newSub;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
+}
+
+void cSamplePlayback::modSynthNoise(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newNoise = (int)sp.noise + value;
+    if (newNoise < 0) newNoise = 0;
+    if (newNoise > 100) newNoise = 100;
+    sp.noise = (uint8_t)newNoise;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
 }

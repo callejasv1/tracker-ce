@@ -72,7 +72,7 @@ void cSamplePlayback::initDisplayControls()
     prop2.h = 54;
     bgLabel = display.createControl<cBgLabel>(&prop2);
 
-    playModeList.linesCount = 8;
+    playModeList.linesCount = playModeCount;
     // start() picks the instrument, and it runs after this on the first visit to the screen.
     // showPlayModeList() sets the real position before the list is drawn.
     playModeList.start = (editorInstrument != nullptr) ? editorInstrument->playMode : 0;
@@ -169,7 +169,21 @@ void cSamplePlayback::showDefaultScreen()
     }
     display.setControlValue(label[6], 0);
 
-    if (loadedInstrumentType == mtSampleTypeWaveFile)
+    if (editorInstrument->playMode == playModeSynth)
+    {
+        display.setControlHide(pointsControl);
+        display.refreshControl(pointsControl);
+        display.setControlHide(granularCursor);
+        display.refreshControl(granularCursor);
+        display.setControlHide(slicePointsControl);
+        display.refreshControl(slicePointsControl);
+        display.setControlHide(progressCursor);
+        display.refreshControl(progressCursor);
+        hideWavetablePositionCursor();
+
+        showSynthValues();
+    }
+    else if (loadedInstrumentType == mtSampleTypeWaveFile)
     {
         display.setControlShow(progressCursor);
         display.refreshControl(progressCursor);
@@ -818,6 +832,79 @@ void cSamplePlayback::formatTimeSeconds(char* destBuffer, size_t destBufferSize,
     snprintf(destBuffer, destBufferSize, "%ss", valueBuffer);
 
     delete[] valueBuffer;
+}
+
+void cSamplePlayback::showSynthValues()
+{
+    if (editorInstrument == nullptr) return;
+    auto& sp = editorInstrument->synthParams();
+
+    static const char* const kModeNames[] = { "Classic", "Sync", "CSaw", "Swarm" };
+    static const char* const kWaveNames[] = { "Saw", "Pulse", "Triangle" };
+
+    display.setAddControlStyle(label[5], controlStyleSpecialFx2);
+    display.setControlData(label[5], &labelDataMore);
+    display.setControlColors(label[5], display.getTheme().moreButtonColors);
+
+    if (!synthScreenMode2)
+    {
+        labelDataMore.dotIndicator.count = 2;
+        labelDataMore.dotIndicator.current = 0;
+
+        display.setControlText(label[0], "Preview");
+        display.setControlText(label[1], "Mode");
+        display.setControlText(label[2], "Osc A");
+        display.setControlText(label[3], "Osc B");
+        display.setControlText(label[4], "Detune");
+        display.setControlText(label[5], "More");
+
+        const char* mName = (sp.mode < synthosc::kModeCount) ? kModeNames[sp.mode] : "Unknown";
+        snprintf(synthModeText, sizeof(synthModeText), "%s", mName);
+
+        const char* wAName = (sp.waveA < synthosc::kWaveCount) ? kWaveNames[sp.waveA] : "Unknown";
+        snprintf(synthOscAText, sizeof(synthOscAText), "%s", wAName);
+
+        const char* wBName = (sp.waveB < synthosc::kWaveCount) ? kWaveNames[sp.waveB] : "Unknown";
+        snprintf(synthOscBText, sizeof(synthOscBText), "%s", wBName);
+
+        snprintf(synthDetuneText, sizeof(synthDetuneText), "%d", (int)sp.detune);
+
+        display.setControlText2(label[1], synthModeText);
+        display.setControlText2(label[2], synthOscAText);
+        display.setControlText2(label[3], synthOscBText);
+        display.setControlText2(label[4], synthDetuneText);
+    }
+    else
+    {
+        labelDataMore.dotIndicator.count = 2;
+        labelDataMore.dotIndicator.current = 1;
+
+        display.setControlText(label[0], "Preview");
+        display.setControlText(label[1], "Semi B");
+        display.setControlText(label[2], "Pulse W");
+        display.setControlText(label[3], "Sub Lvl");
+        display.setControlText(label[4], "Noise");
+        display.setControlText(label[5], "More");
+
+        snprintf(synthSemiBText, sizeof(synthSemiBText), "%+d st", (int)sp.semiB);
+        snprintf(synthPwText, sizeof(synthPwText), "%d%%", (int)sp.pw);
+        snprintf(synthSubText, sizeof(synthSubText), "%d%%", (int)sp.sub);
+        snprintf(synthNoiseText, sizeof(synthNoiseText), "%d%%", (int)sp.noise);
+
+        display.setControlText2(label[1], synthSemiBText);
+        display.setControlText2(label[2], synthPwText);
+        display.setControlText2(label[3], synthSubText);
+        display.setControlText2(label[4], synthNoiseText);
+    }
+
+    display.setControlText2(label[0], "-");
+    display.setControlText2(label[5], "");
+
+    for (uint8_t i = 0; i <= 5; i++)
+    {
+        display.setControlShow(label[i]);
+        display.refreshControl(label[i]);
+    }
 }
 
 //==============================================================================================================

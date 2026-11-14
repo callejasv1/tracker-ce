@@ -72,14 +72,34 @@ const char* const ccNameLabels[ccNumbersCount] = {
     "Prg Chg",  "Chan AT", "Poly AT",
 };
 
-const char* const envelopesLabels[autoDestCount] = {
+const char* const modDestNames[modDestCount] = {
+    "Off",
+    "Resonance",
+    "Cutoff",
+    "Overdrive",
+    "Bit Depth",
+    "Delay Send",
+    "Reverb Send",
+    "Panning",
+    "Finetune",
+    "Volume",
+    "Pulse Width",
+    "Detune",
+    "Sub Level",
+    "Noise Level"
+};
+
+static char modDestLabelBuf[32] = "Mod: Off";
+
+const char* envelopesLabels[autoDestCount] = {
     "Volume",
     "Panning",
     "Cutoff",
     "Wavetable Position",
     "Granular Position",
     "Granular Length",
-    "Finetune"
+    "Finetune",
+    modDestLabelBuf
 };
 
 const char* const envStateLabels[5] = { "Off", "Envelope", "LFO", "WT Env", "WT LFO" };
@@ -404,7 +424,27 @@ void cInstrumentEditor::showInstrumentEnv()
     display.setControlHide(label[0]);
     display.setControlHide(label[1]);
 
-    display.setControlText(doubleLabelAutomation, "Destination");
+    if (editorInstrument)
+    {
+        if (editorInstrument->modDestination < modDestCount)
+            snprintf(modDestLabelBuf, sizeof(modDestLabelBuf), "Mod: %s", modDestNames[editorInstrument->modDestination]);
+        else
+            strcpy(modDestLabelBuf, "Mod: Off");
+    }
+
+    if (selectedEnvelope == autoDestMod)
+    {
+        display.setControlText(doubleLabelAutomation, "Target (Shift+Wheel)");
+        if (editorInstrument && editorInstrument->modDestination < modDestCount)
+            display.setControlText2(doubleLabelAutomation, modDestNames[editorInstrument->modDestination]);
+        else
+            display.setControlText2(doubleLabelAutomation, "Off");
+    }
+    else
+    {
+        display.setControlText(doubleLabelAutomation, "Destination");
+        display.setControlText2(doubleLabelAutomation, "");
+    }
     display.setControlShow(doubleLabelAutomation);
 
     display.setControlText(label[2], "Type");
@@ -415,7 +455,6 @@ void cInstrumentEditor::showInstrumentEnv()
     display.setControlText2(label[5], "");
     display.setControlText2(label[6], "");
     display.setControlText2(label[7], "");
-    display.setControlText2(doubleLabelAutomation, "");
 
     display.setRemoveControlStyle(label[1], controlStyleShowBitmap);
     display.setRemoveControlStyle(label[6], controlStyleShowBitmap);
@@ -1190,6 +1229,13 @@ void cInstrumentEditor::showInstList()
 
 void cInstrumentEditor::showEnvList()
 {
+    if (editorInstrument)
+    {
+        if (editorInstrument->modDestination < modDestCount)
+            snprintf(modDestLabelBuf, sizeof(modDestLabelBuf), "Mod: %s", modDestNames[editorInstrument->modDestination]);
+        else
+            strcpy(modDestLabelBuf, "Mod: Off");
+    }
     display.setControlValue(list1Control, selectedEnvelope);
     display.refreshControl(list1Control);
 }

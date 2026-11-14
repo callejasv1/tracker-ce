@@ -31,6 +31,7 @@
 #include "VoiceStreamManager.h"
 #include "amplifier.h"
 #include "mtStructs.h"
+#include "synth_osc.h"
 
 class Timer;
 
@@ -120,6 +121,10 @@ class AudioPlayMemory : public AudioStream
     //*********
     //*****Wavetable
     void setWavetableWindow(int16_t value);
+    //*********
+    //*****Synth
+    void setSynthMod(int16_t val) { synthMod = val; }
+    void setSynthPwMod(int16_t val) { synthPwMod = val; }
     //*********
     //*****************************************************************
     //*********Wymuszanie Parametrów z Sequencera lub PerformanceMode
@@ -240,6 +245,7 @@ class AudioPlayMemory : public AudioStream
     void playBeatSlice(uint8_t instrIdx, int8_t note);
     void playGranular(uint8_t instrIdx, int8_t note);
     void playWavetable(uint8_t instrIdx, int8_t note);
+    void playSynth(uint8_t instrIdx, int8_t note);
     // UPDATE OBSLUGA OGÓLNA
 
     // UPDATE Z PODZIALEM NA TRYBY
@@ -251,6 +257,7 @@ class AudioPlayMemory : public AudioStream
     audio_block_t* updateBeatSlice();
     audio_block_t* updateGranular();
     audio_block_t* updateWavetable();
+    audio_block_t* updateSynth();
 
     // singleShot
     audio_block_t* updateSingleShotNormal();
@@ -445,6 +452,15 @@ class AudioPlayMemory : public AudioStream
 
     uint8_t granularPositionRefreshFlag = 1; // pozycja jest aktualizowana gdy nastepuje przejscie
                                              // pętli(audio) i ustawiona jest ta flaga
+    //********
+    //********** Synth
+    synthosc::Oscillator synthOsc;
+    synthosc::BlockParams synthBlockParams;
+    float synthRatioB = 1.0f;
+    float synthRatioC = 1.0f;
+    int16_t synthMod = 0;
+    int16_t synthPwMod = 0;
+    bool synthOscInitialized = false;
     //********
 
     //*************** Zmienne wymuszajace zmiany parametrow instrumentow przez Sequencer lub

@@ -13,7 +13,7 @@
 const char playModeFunctLabels[playModeCount][15] = {
     "1-Shot", "Forward Loop", "Backward Loop", "Pingpong Loop",
     "Slice",  "Beat Slice",   "Wavetable",     "Granular",
-
+    "Synth"
 };
 
 constexpr uint8_t MAX_WAVETABLE_WINDOWS_COUNTER = 11;
@@ -58,6 +58,7 @@ class cSamplePlayback : public ModuleBase
         label[8] = { -1 };
         // popupLabel = -1;
         lastSampleLength = 0;
+        synthScreenMode2 = false;
     }
     virtual ~cSamplePlayback() {}
 
@@ -181,6 +182,7 @@ class cSamplePlayback : public ModuleBase
     elapsedMicros refreshPlayProgressValue = 0;
     float playPitch = 1.0;
     bool sliceScreenMode2;
+    bool synthScreenMode2 = false;
     int8_t displayedTrack = -1;
 
     strInstrument* editorInstrument = nullptr;
@@ -260,6 +262,25 @@ class cSamplePlayback : public ModuleBase
     void showGrainLengthValue();
     void showShapeText();
     void showLoopTypeText();
+
+    char synthModeText[15];
+    char synthOscAText[15];
+    char synthOscBText[15];
+    char synthDetuneText[15];
+    char synthSemiBText[15];
+    char synthPwText[15];
+    char synthSubText[15];
+    char synthNoiseText[15];
+
+    void showSynthValues();
+    void modSynthMode(int16_t value);
+    void modSynthOscA(int16_t value);
+    void modSynthOscB(int16_t value);
+    void modSynthDetune(int16_t value);
+    void modSynthSemiB(int16_t value);
+    void modSynthPW(int16_t value);
+    void modSynthSub(int16_t value);
+    void modSynthNoise(int16_t value);
 
     float samplePosToTime(uint32_t pos);
 

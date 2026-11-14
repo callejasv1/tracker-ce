@@ -398,7 +398,8 @@ AUDIO_CORE_RAM void playerEngine::handleInitNoteOnAllEnvelopes()
         handleInitNoteOnEnvelope(envCutoff);
     }
 
-    if (mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable)
+    if ((mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable) ||
+        (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth))
     {
         handleInitNoteOnEnvelope(envWtPos);
     }
@@ -407,6 +408,10 @@ AUDIO_CORE_RAM void playerEngine::handleInitNoteOnAllEnvelopes()
     {
         handleInitNoteOnEnvelope(envGranPos);
         handleInitNoteOnEnvelope(envGranLen);
+    }
+    else if (mtProject.instrument[currentInstrument_idx].modDestination != modDestOff)
+    {
+        handleInitNoteOnEnvelope(envMod);
     }
     handleInitNoteOnEnvelope(envPan);
     handleInitNoteOnEnvelope(envFinetune);
@@ -683,7 +688,9 @@ AUDIO_CORE_RAM void playerEngine::handleInitFxNoteOnAllEnvelopes()
         handleInitFxNoteOnEnvelope(envCutoff);
     }
 
-    if (mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWavetable)
+    if ((mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWavetable) ||
+        (mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable) ||
+        (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth))
     {
         handleInitFxNoteOnEnvelope(envWtPos);
     }
@@ -693,6 +700,10 @@ AUDIO_CORE_RAM void playerEngine::handleInitFxNoteOnAllEnvelopes()
     {
         handleInitFxNoteOnEnvelope(envGranPos);
         handleInitFxNoteOnEnvelope(envGranLen);
+    }
+    else if (mtProject.instrument[currentInstrument_idx].modDestination != modDestOff)
+    {
+        handleInitFxNoteOnEnvelope(envMod);
     }
     handleInitFxNoteOnEnvelope(envPan);
     handleInitFxNoteOnEnvelope(envFinetune);
