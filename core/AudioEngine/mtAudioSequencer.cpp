@@ -2196,8 +2196,6 @@ void playerEngine::initEnvelopesParameters(uint8_t n, envelopeGenerator::strEnv*
               mtProject.instrument[currentInstrument_idx].lfo[envAmp].wtSust);
         }
 
-        uint8_t localVol = getMostSignificantVolume();
-
         setRefreshBit(VOLUME_MASK);
     }
     else
@@ -2493,17 +2491,17 @@ void playerEngine::clearFxPositionGranular()
     }
     else
     {
-        uint32_t localGranPos =
-          mtProject.instrument[currentInstrument_idx].granular.currentPosition;
-
         int32_t localGranMod = currentEnvelopeModification[envGranPos] * MAX_16BIT;
-
-        if (localGranPos + localGranMod > MAX_16BIT)
+        int32_t granSum =
+          static_cast<int32_t>(mtProject.instrument[currentInstrument_idx].granular.currentPosition) +
+          localGranMod;
+        uint32_t localGranPos;
+        if (granSum > MAX_16BIT)
             localGranPos = MAX_16BIT;
-        else if (localGranPos + localGranMod < 0)
+        else if (granSum < 0)
             localGranPos = 0;
         else
-            localGranPos += localGranMod;
+            localGranPos = static_cast<uint32_t>(granSum);
 
         for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
         {
@@ -2589,14 +2587,15 @@ void playerEngine::clearFxPositionWavetable()
           currentEnvelopeModification[envWtPos] *
           mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber;
 
-        if (localWtPos + localWtMod >
-            mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber - 1)
-            localWtPos =
-              mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber - 1;
-        else if (localWtPos + localWtMod < 0)
+        int32_t wtMax = static_cast<int32_t>(
+          mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber) - 1;
+        int32_t wtSum = static_cast<int32_t>(localWtPos) + localWtMod;
+        if (wtMax <= 0 || wtSum < 0)
             localWtPos = 0;
+        else if (wtSum > wtMax)
+            localWtPos = static_cast<uint32_t>(wtMax);
         else
-            localWtPos += localWtMod;
+            localWtPos = static_cast<uint32_t>(wtSum);
 
         for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
         {

@@ -447,14 +447,15 @@ void playerEngine::changeWavetableWindowPerformanceMode(int16_t value)
                       -mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber,
                       mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber);
 
-    if (wavetableWindow + valueMap >=
-        mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber)
-        currentPerformanceValues.wavetablePosition =
-          mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber - 1;
-    else if (wavetableWindow + valueMap < 0)
+    int32_t wtCount =
+      static_cast<int32_t>(mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber);
+    int32_t wtSum = static_cast<int32_t>(wavetableWindow) + valueMap;
+    if (wtCount <= 0 || wtSum < 0)
         currentPerformanceValues.wavetablePosition = 0;
+    else if (wtSum >= wtCount)
+        currentPerformanceValues.wavetablePosition = static_cast<uint32_t>(wtCount - 1);
     else
-        currentPerformanceValues.wavetablePosition = wavetableWindow + valueMap;
+        currentPerformanceValues.wavetablePosition = static_cast<uint32_t>(wtSum);
 
     trackControlParameter[(int)controlType::performanceMode]
                          [(int)parameterList::wavetablePosition] = 1;
@@ -495,12 +496,13 @@ void playerEngine::changeGranularPositionPerformanceMode(int16_t value)
 
     int32_t valueMap = mapClamped<int>(value, -100, 100, -MAX_16BIT, MAX_16BIT);
 
-    if (granularPosition + valueMap >= MAX_16BIT)
+    int32_t granSum = static_cast<int32_t>(granularPosition) + valueMap;
+    if (granSum >= MAX_16BIT)
         currentPerformanceValues.granularPosition = MAX_16BIT;
-    else if (granularPosition + valueMap < 0)
+    else if (granSum < 0)
         currentPerformanceValues.granularPosition = 0;
     else
-        currentPerformanceValues.granularPosition = granularPosition + valueMap;
+        currentPerformanceValues.granularPosition = static_cast<uint32_t>(granSum);
 
     trackControlParameter[(int)controlType::performanceMode][(int)parameterList::granularPosition] =
       1;

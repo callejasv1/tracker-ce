@@ -83,9 +83,18 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateWavetable()
     {
         out = block->data;
 
+        if (wavetableWindowSize == 0 || length < wavetableWindowSize)
+        {
+            memset(block->data, 0, sizeof(block->data));
+            return block;
+        }
+
         waveTablePosition = wavetableWindowSize * currentWindow;
 
-        uint32_t maxlength = length - length % wavetableWindowSize - wavetableWindowSize;
+        uint32_t rem = ((wavetableWindowSize & (wavetableWindowSize - 1u)) == 0)
+                         ? (length & (wavetableWindowSize - 1u))
+                         : (length % wavetableWindowSize);
+        uint32_t maxlength = length - rem - wavetableWindowSize;
 
         if (waveTablePosition > maxlength)
         {

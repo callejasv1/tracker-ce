@@ -17,25 +17,26 @@ AUDIO_CORE_RAM void playerEngine::update()
     //***********************
     //**************HANDLE UPDATE ENVELOPE
     // stablicowanie warunkow odswiezenia envelopeow
+    const auto& instr = mtProject.instrument[currentInstrument_idx];
     bool envelopeCondition[ACTIVE_ENVELOPES];
     envelopeCondition[envAmp] =
-      ((mtProject.instrument[currentInstrument_idx].envelope[envAmp].enable == 1) ||
+      ((instr.envelope[envAmp].enable == 1) ||
        (trackControlParameter[(int)controlType::sequencerMode][envelopesControlValue[envAmp]]) ||
        (trackControlParameter[(int)controlType::sequencerMode2][envelopesControlValue[envAmp]]) ||
        (trackControlParameter[(int)controlType::performanceMode][envelopesControlValue[envAmp]]));
-    envelopeCondition[envCutoff] = (mtProject.instrument[currentInstrument_idx].filterEnable == 1);
+    envelopeCondition[envCutoff] = (instr.filterEnable == 1);
     envelopeCondition[envPan] = true;
     envelopeCondition[envWtPos] =
-      (mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWavetable) ||
-      (mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable) ||
-      ((mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWaveFile) &&
-       (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)) ||
-      (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth);
+      (instr.sample.type == mtSampleTypeWavetable) ||
+      (instr.playMode == playModeWavetable) ||
+      ((instr.sample.type == mtSampleTypeWaveFile) &&
+       (instr.playMode == playModeGranular)) ||
+      (instr.playMode == playModeSynth);
     envelopeCondition[envGranPos] =
-      ((mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWaveFile) &&
-       (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)) ||
-      (mtProject.instrument[currentInstrument_idx].playMode != playModeGranular &&
-       mtProject.instrument[currentInstrument_idx].modDestination != modDestOff);
+      ((instr.sample.type == mtSampleTypeWaveFile) &&
+       (instr.playMode == playModeGranular)) ||
+      (instr.playMode != playModeGranular &&
+       instr.modDestination != modDestOff);
     envelopeCondition[envFinetune] = true;
     //*******
     for (uint8_t i = envAmp; i < ACTIVE_ENVELOPES; i++)
