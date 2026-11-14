@@ -32,6 +32,7 @@ enum Mode : uint8_t
     kModeSwarm,       // 3 detuned saws (light supersaw)
     kModeFM,          // 2-Op Phase Modulation (Osc B -> Osc A phase) + Sub + Noise
     kModeRing,        // Band-limited Ring Modulator (Osc A * Osc B) + Sub + Noise
+    kModeFold,        // West-Coast Wavefolder (PW = Fold Drive, Osc B Lvl = Symmetry/Cross-Fold)
     kModeCount
 };
 
@@ -129,6 +130,7 @@ class Oscillator
             case kModeSwarm: renderSwarm(bp, out, n); break;
             case kModeFM: renderFM(waveA, waveB, bp, out, n); break;
             case kModeRing: renderRingDispatchA(waveA, waveB, bp, out, n); break;
+            case kModeFold: renderFold(waveA, waveB, bp, out, n); break;
             default: renderClassicDispatchA(waveA, waveB, bp, out, n); break;
         }
     }
@@ -492,6 +494,47 @@ class Oscillator
                 acc += nextNoise() * gN;
             *out++ = (int16_t)sat16(acc >> 13);
         } while (--n);
+    }
+
+    // -------------------------------------------------------------- mode: Fold
+    // O(1) continuous integer triangle wavefolder mapping any int32 into [-32768, 32767].
+    static inline int32_t foldWave(int32_t x)
+    {
+        uint32_t m = static_cast<uint32_t>(x + 32768) & 0x1FFFFu;
+        int32_t v = (m < 65536u) ? static_cast<int32_t>(m) : static_cast<int32_t>(131071u - m);
+        return v - 32768;
+    }
+
+    void renderFold(uint8_t waveA, uint8_t waveB, const BlockParams& bp, int16_t* out, int n)
+    {
+        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase;
+        const int32_t gB = bp.gainB, gS = bp.gainSub, gN = bp.gainNoise;
+        // PW drives fold intensity (1.0x .. 5.7x), Osc B Lvl adds cross-fold & symmetry bias.
+        const int32_t foldQ8 = 256 + ((int32_t)(bp.fmPw - 25) * 12) + (gB >> 3);
+        const int32_t bias = gB << 1;
+        uint32_t pA = phase[0];
+        uint32_t pB = phase[1];
+        do
+        {
+            pA += incA;
+            pB += incB;
+            uint32_t wrapA = (pA < incA) ? blepT(pA, incA) : 0xFFFFFFFFu;
+            int32_t carVal = evalPhaseWave(waveA, pA, pw);
+            int32_t pre = ((carVal * foldQ8) >> 8) + bias;
+            if (gB)
+            {
+                int32_t bVal = evalPhaseWave(waveB, pB, pw);
+                pre += (bVal * gB) >> 13;
+            }
+            int32_t folded = foldWave(pre);
+            int32_t acc = folded * 4096;
+            acc += stepSub(wrapA) * gS;
+            if (gN)
+                acc += nextNoise() * gN;
+            *out++ = (int16_t)sat16(acc >> 13);
+        } while (--n);
+        phase[0] = pA;
+        phase[1] = pB;
     }
 };
 

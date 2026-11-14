@@ -1034,7 +1034,8 @@ void audioEngine::setInterpolationEnable(bool value)
 
 void audioEngine::setDelayFeedback(uint8_t value)
 {
-    delay->setFeedback(value / 100.0);
+    delay->setFreeze(value >= 100);
+    delay->setFeedback(value / 100.0f);
 }
 
 void audioEngine::setDelayTime(uint16_t value)

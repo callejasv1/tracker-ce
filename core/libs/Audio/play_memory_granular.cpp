@@ -8,6 +8,21 @@ uint16_t AudioPlayMemory::gaussTab[GRANULAR_LOOKUP_SIZE];
 uint16_t AudioPlayMemory::squareTab[GRANULAR_LOOKUP_SIZE];
 uint16_t AudioPlayMemory::triangleTab[GRANULAR_LOOKUP_SIZE];
 
+static inline uint16_t evalGranularEnvIndex(int32_t iPitchCounter,
+                                            uint32_t lp1,
+                                            uint32_t lp2,
+                                            uint32_t stepQ16)
+{
+    if (iPitchCounter <= (int32_t)lp1)
+        return 0;
+    if (iPitchCounter >= (int32_t)lp2)
+        return AudioPlayMemory::GRANULAR_LOOKUP_SIZE - 1;
+    uint32_t idx = ((uint32_t)(iPitchCounter - (int32_t)lp1) * stepQ16) >> 16;
+    return idx < (AudioPlayMemory::GRANULAR_LOOKUP_SIZE - 1)
+             ? (uint16_t)idx
+             : (AudioPlayMemory::GRANULAR_LOOKUP_SIZE - 1);
+}
+
 AUDIO_CORE_FLASH void AudioPlayMemory::initGranularShapeLookup()
 {
     for (int idx = 0; idx < GRANULAR_LOOKUP_SIZE; idx++)
@@ -88,12 +103,13 @@ AUDIO_CORE_FLASH void AudioPlayMemory::playGranular(uint8_t instrIdx, int8_t not
     constrainsInSamples.loopPoint2 = pointsInSamples.loop2 - pointsInSamples.start;
     constrainsInSamples.loopLength = pointsInSamples.loop2 - pointsInSamples.loop1;
     constrainsInSamples.endPoint = pointsInSamples.end - pointsInSamples.start;
+    updateGranularEnvStep();
 
     next = currentStartAddress + pointsInSamples.start;
     length = currentSampleLength - pointsInSamples.start;
     iPitchCounter = reverseDirectionFlag ? constrainsInSamples.endPoint - 1 : 0;
 
-    granularPositionRefreshFlag = 0;
+    granularPositionRefreshFlag = (granularLoopType == granularLoopCloud) ? 1 : 0;
     playing = 1;
     //	__enable_irq();
     AudioInterrupts();
@@ -106,6 +122,10 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateGranular()
         case granularLoopForward: return updateGranularLoopForward(); break;
         case granularLoopBackward: return updateGranularLoopBackward(); break;
         case granularLoopPingPong: return updateGranularLoopPingPong(); break;
+        case granularLoopCloud:
+            granularPositionRefreshFlag = 1;
+            return updateGranularLoopPingPong();
+            break;
         default: return nullptr; break;
     }
 }
@@ -220,11 +240,10 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateGranularLoopForwardNormal
             }
             else
             {
-                uint16_t volIndex = mapClamped<int>(iPitchCounter,
-                                                    constrainsInSamples.loopPoint1,
-                                                    constrainsInSamples.loopPoint2,
-                                                    0,
-                                                    GRANULAR_LOOKUP_SIZE - 1);
+                uint16_t volIndex = evalGranularEnvIndex(iPitchCounter,
+                                                         constrainsInSamples.loopPoint1,
+                                                         constrainsInSamples.loopPoint2,
+                                                         granularEnvStepQ16);
                 *out++ = (interpSample * granularEnvelopeTab[volIndex]) >> 16;
             }
 
@@ -364,11 +383,10 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateGranularLoopForwardRevers
             }
             else
             {
-                uint16_t volIndex = mapClamped<int>(iPitchCounter,
-                                                    constrainsInSamples.loopPoint1,
-                                                    constrainsInSamples.loopPoint2,
-                                                    0,
-                                                    GRANULAR_LOOKUP_SIZE - 1);
+                uint16_t volIndex = evalGranularEnvIndex(iPitchCounter,
+                                                         constrainsInSamples.loopPoint1,
+                                                         constrainsInSamples.loopPoint2,
+                                                         granularEnvStepQ16);
                 *out++ = (interpSample * granularEnvelopeTab[volIndex]) >> 16;
             }
 
@@ -511,11 +529,10 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateGranularLoopBackwardNorma
             }
             else
             {
-                uint16_t volIndex = mapClamped<int>(iPitchCounter,
-                                                    constrainsInSamples.loopPoint1,
-                                                    constrainsInSamples.loopPoint2,
-                                                    0,
-                                                    GRANULAR_LOOKUP_SIZE - 1);
+                uint16_t volIndex = evalGranularEnvIndex(iPitchCounter,
+                                                         constrainsInSamples.loopPoint1,
+                                                         constrainsInSamples.loopPoint2,
+                                                         granularEnvStepQ16);
                 *out++ = (interpSample * granularEnvelopeTab[volIndex]) >> 16;
             }
 
@@ -701,11 +718,10 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateGranularLoopBackwardRever
             }
             else
             {
-                uint16_t volIndex = mapClamped<int>(iPitchCounter,
-                                                    constrainsInSamples.loopPoint1,
-                                                    constrainsInSamples.loopPoint2,
-                                                    0,
-                                                    GRANULAR_LOOKUP_SIZE - 1);
+                uint16_t volIndex = evalGranularEnvIndex(iPitchCounter,
+                                                         constrainsInSamples.loopPoint1,
+                                                         constrainsInSamples.loopPoint2,
+                                                         granularEnvStepQ16);
                 *out++ = (interpSample * granularEnvelopeTab[volIndex]) >> 16;
             }
 
@@ -890,11 +906,10 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateGranularLoopPingPongNorma
             }
             else
             {
-                uint16_t volIndex = mapClamped<int>(iPitchCounter,
-                                                    constrainsInSamples.loopPoint1,
-                                                    constrainsInSamples.loopPoint2,
-                                                    0,
-                                                    GRANULAR_LOOKUP_SIZE - 1);
+                uint16_t volIndex = evalGranularEnvIndex(iPitchCounter,
+                                                         constrainsInSamples.loopPoint1,
+                                                         constrainsInSamples.loopPoint2,
+                                                         granularEnvStepQ16);
                 *out++ = (interpSample * granularEnvelopeTab[volIndex]) >> 16;
             }
 
@@ -1079,11 +1094,10 @@ AUDIO_CORE_FLASH audio_block_t* AudioPlayMemory::updateGranularLoopPingPongRever
             }
             else
             {
-                uint16_t volIndex = mapClamped<int>(iPitchCounter,
-                                                    constrainsInSamples.loopPoint1,
-                                                    constrainsInSamples.loopPoint2,
-                                                    0,
-                                                    GRANULAR_LOOKUP_SIZE - 1);
+                uint16_t volIndex = evalGranularEnvIndex(iPitchCounter,
+                                                         constrainsInSamples.loopPoint1,
+                                                         constrainsInSamples.loopPoint2,
+                                                         granularEnvStepQ16);
                 *out++ = (interpSample * granularEnvelopeTab[volIndex]) >> 16;
             }
             if (!loopBackwardFlag)

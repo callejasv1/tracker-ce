@@ -808,6 +808,7 @@ void cSamplePlayback::showLoopTypeText()
         case granularLoopForward: strcpy(loopTypeText, "Forward"); break;
         case granularLoopBackward: strcpy(loopTypeText, "Backward"); break;
         case granularLoopPingPong: strcpy(loopTypeText, "PingPong"); break;
+        case granularLoopCloud: strcpy(loopTypeText, "Cloud"); break;
         default: break;
     }
 
@@ -839,7 +840,9 @@ void cSamplePlayback::showSynthValues()
     if (editorInstrument == nullptr) return;
     auto& sp = editorInstrument->synthParams();
 
-    static const char* const kModeNames[] = { "Classic", "Sync", "CSaw", "Swarm", "FM", "Ring" };
+    static const char* const kModeNames[] = {
+        "Classic", "Sync", "CSaw", "Swarm", "FM", "Ring", "Fold"
+    };
     static const char* const kWaveNames[] = { "Saw", "Pulse", "Triangle" };
 
     display.setAddControlStyle(label[5], controlStyleSpecialFx2);

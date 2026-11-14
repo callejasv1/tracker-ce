@@ -125,6 +125,23 @@ AUDIO_CORE_FLASH void AudioFilterStateVariable::stabilize()
     update_fixed(buffer, buffer, kStabilizeBufferSize);
 }
 
+static inline int32_t softLimitSvfBandpass(int32_t x)
+{
+    static constexpr int32_t kKnee = 1 << 29; // +12 dBFS internal headroom above 16-bit<<12
+    static constexpr int32_t kCeiling = (1 << 29) + (1 << 28);
+    if (x > kKnee)
+    {
+        x = kKnee + ((x - kKnee) >> 2);
+        return x > kCeiling ? kCeiling : x;
+    }
+    if (x < -kKnee)
+    {
+        x = -kKnee + ((x + kKnee) >> 2);
+        return x < -kCeiling ? -kCeiling : x;
+    }
+    return x;
+}
+
 AUDIO_CORE_RAM void AudioFilterStateVariable::update_fixed(const int16_t* in, int16_t* out, int samples)
 {
     const int16_t* end = in + samples;
@@ -150,13 +167,13 @@ AUDIO_CORE_RAM void AudioFilterStateVariable::update_fixed(const int16_t* in, in
         lowpass = lowpass + MULT(fmult, bandpass);
         highpass = ((input + inputprev) >> 1) - lowpass - MULT(damp, bandpass);
         inputprev = input;
-        bandpass = bandpass + MULT(fmult, highpass);
+        bandpass = softLimitSvfBandpass(bandpass + MULT(fmult, highpass));
         lowpasstmp = lowpass;
         bandpasstmp = bandpass;
         highpasstmp = highpass;
         lowpass = lowpass + MULT(fmult, bandpass);
         highpass = input - lowpass - MULT(damp, bandpass);
-        bandpass = bandpass + MULT(fmult, highpass);
+        bandpass = softLimitSvfBandpass(bandpass + MULT(fmult, highpass));
 
         int32_t passSum;
         if (type == kFilterTypeLowPass)
@@ -239,7 +256,9 @@ AUDIO_CORE_RAM void AudioFilterStateVariable::update(void)
 
     if ((isEnabled != lastEnabled) || (filterType != lastFilterType))
     {
-        const int32_t kBlockSamplesShift = log2f(AUDIO_BLOCK_SAMPLES);
+        static_assert((AUDIO_BLOCK_SAMPLES & (AUDIO_BLOCK_SAMPLES - 1)) == 0,
+                      "AUDIO_BLOCK_SAMPLES must be a power of 2");
+        constexpr int32_t kBlockSamplesShift = 7; // log2(128)
         for (int32_t sampleIdx = 0; sampleIdx < AUDIO_BLOCK_SAMPLES; sampleIdx++)
         {
             out_block->data[sampleIdx] =

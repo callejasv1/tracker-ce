@@ -648,8 +648,21 @@ void AudioPlayMemory::refreshGranularPosition()
         : (granularLengthForcedFlag ? forcedGranularLength
                                     : mtProject.instrument[currentInstrIdx].granular.grainLength);
 
+    uint16_t posToUse = currentGranularPosition;
+    if (granularLoopType == granularLoopCloud)
+    {
+        granularCloudSeed = granularCloudSeed * 1664525u + 1013904223u;
+        int32_t scatter = (int32_t)(static_cast<int16_t>(granularCloudSeed >> 16)) >> 2;
+        int32_t p = (int32_t)posToUse + scatter;
+        if (p < 0)
+            p = 0;
+        else if (p > MAX_16BIT)
+            p = MAX_16BIT;
+        posToUse = (uint16_t)p;
+    }
+
     auto [startGranular, loopPoint1Granular, loopPoint2Granular, endGranular] =
-      calculateGranularPoints(currentGranularPosition,
+      calculateGranularPoints(posToUse,
                               grainLengthToUse,
                               mtProject.instrument[currentInstrIdx].sample.length);
 
@@ -668,8 +681,9 @@ void AudioPlayMemory::refreshGranularPosition()
     constrainsInSamples.loopPoint2 = pointsInSamples.loop2 - pointsInSamples.start;
     constrainsInSamples.loopLength = pointsInSamples.loop2 - pointsInSamples.loop1;
     constrainsInSamples.endPoint = pointsInSamples.end - pointsInSamples.start;
+    updateGranularEnvStep();
 
-    granularPositionRefreshFlag = 0;
+    granularPositionRefreshFlag = (granularLoopType == granularLoopCloud) ? 1 : 0;
 }
 
 std::tuple<uint16_t, uint16_t, uint16_t, uint16_t> AudioPlayMemory::calculateGranularPoints(

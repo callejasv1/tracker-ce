@@ -285,7 +285,7 @@ const int8_t REVERB_PANNING_MIN = -100;
 const uint8_t REVERB_PANNING_MAX = 100;
 
 const uint8_t DELAY_FEEDBACK_MIN = 0;
-const uint8_t DELAY_FEEDBACK_MAX = 99;
+const uint8_t DELAY_FEEDBACK_MAX = 100;
 const uint16_t DELAY_TIME_MIN = 1;
 const uint16_t DELAY_TIME_MAX = 3500;
 const uint16_t DELAY_FILTER_FREQ_MIN = 100;
@@ -564,6 +564,7 @@ enum granularLoopType
     granularLoopForward,
     granularLoopBackward,
     granularLoopPingPong,
+    granularLoopCloud,
 
     granularLoopCount
 };

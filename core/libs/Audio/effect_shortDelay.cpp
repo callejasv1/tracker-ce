@@ -18,6 +18,8 @@ AUDIO_CORE_FLASH void AudioEffectShortDelay::begin(float feedback,
                                              uint8_t syncRateIdx,
                                              float frequency)
 {
+    isFrozen = false;
+    hasTimeInit = false;
     setPingpongEnable(pingPongEnabled);
     setSyncEnable(syncEnabled);
     setTime(timeMs);
@@ -55,16 +57,32 @@ AUDIO_CORE_FLASH void AudioEffectShortDelay::setTime(float time)
 {
     if (time > MAX_SHORT_DELAY_TIME)
         time = MAX_SHORT_DELAY_TIME;
-    //	__disable_irq();
+    uint32_t samples = (uint32_t)(time * 44.1f);
+    if (samples >= MAX_DELAYLINE_LENGTH)
+        samples = MAX_DELAYLINE_LENGTH - 1;
+    if (samples < 1)
+        samples = 1;
     AudioNoInterrupts();
-    timeInSamples = (uint32_t)(time * 44.1f);
-    //	__enable_irq();
+    targetTimeInSamples = samples;
+    timeInSamples = samples;
+    if (!hasTimeInit)
+    {
+        currentTimeQ8 = (int32_t)(samples << kDelayTimeFracShift);
+        hasTimeInit = true;
+    }
     AudioInterrupts();
 }
 
 AUDIO_CORE_FLASH int AudioEffectShortDelay::getTime()
 {
-    return int(timeInSamples / 44.1f);
+    return int(targetTimeInSamples / 44.1f);
+}
+
+AUDIO_CORE_FLASH void AudioEffectShortDelay::setFreeze(bool freeze)
+{
+    AudioNoInterrupts();
+    isFrozen = freeze;
+    AudioInterrupts();
 }
 
 AUDIO_CORE_FLASH void AudioEffectShortDelay::setRate(uint8_t syncRateIdx)
@@ -110,6 +128,7 @@ AUDIO_CORE_FLASH void AudioEffectShortDelay::clear()
     blockUpdate();
     //    AudioNoInterrupts();
     headIdx = 0;
+    currentTimeQ8 = (int32_t)(targetTimeInSamples << kDelayTimeFracShift);
     lastFilterInLeft = 0;
     lastFilterInRight = 0;
     lastFilterInMono = 0;
@@ -190,25 +209,76 @@ AUDIO_CORE_RAM bool AudioEffectShortDelay::process(int16_t input[],
     int32_t newDelayedSampleRight = 0;
     int32_t newDelayedSampleMono = 0;
 
+    const int32_t targetQ8 = (int32_t)(targetTimeInSamples << kDelayTimeFracShift);
+    int32_t curTimeQ8 = currentTimeQ8;
+    const bool frozen = isFrozen;
+    const uint32_t curFeedback = feedback;
+
+    auto divCoeffShift = [](int32_t num) -> int32_t
+    {
+        static constexpr int32_t kShiftMask = (1 << kFilterCoeffsShift) - 1;
+        return (num + (num < 0 ? kShiftMask : 0)) >> kFilterCoeffsShift;
+    };
+
     for (int sample = 0; sample < sampleCount; sample++)
     {
-        uint32_t delayedSampleIdx = (headIdx - timeInSamples) & delaylineLengthMask;
-        int16_t delayedSampleRight = pingpongDelaylineRight[delayedSampleIdx];
-        int16_t delayedSampleLeft = pingpongDelaylineLeft[delayedSampleIdx];
-        int16_t delayedSampleMono = monoDelayline[delayedSampleIdx];
+        uint32_t wholeDelay;
+        uint32_t fracQ8 = 0;
+        if (curTimeQ8 != targetQ8)
+        {
+            int32_t diff = targetQ8 - curTimeQ8;
+            int32_t step = diff >> 10;
+            if (step == 0)
+            {
+                step = (diff > 0) ? 1 : -1;
+            }
+            curTimeQ8 += step;
+            if (curTimeQ8 < (1 << kDelayTimeFracShift))
+            {
+                curTimeQ8 = (1 << kDelayTimeFracShift);
+            }
+            wholeDelay = (uint32_t)(curTimeQ8 >> kDelayTimeFracShift);
+            fracQ8 = (uint32_t)(curTimeQ8 & ((1 << kDelayTimeFracShift) - 1));
+        }
+        else
+        {
+            wholeDelay = targetTimeInSamples;
+        }
 
-        int32_t filteredSampleRight =
-          (filterCoeffs.a0 * delayedSampleRight + filterCoeffs.a1 * lastFilterInRight -
-           filterCoeffs.b1 * lastFilterOutRight) /
-          (1 << kFilterCoeffsShift);
-        int32_t filteredSampleLeft =
-          (filterCoeffs.a0 * delayedSampleLeft + filterCoeffs.a1 * lastFilterInLeft -
-           filterCoeffs.b1 * lastFilterOutLeft) /
-          (1 << kFilterCoeffsShift);
-        int32_t filteredSampleMono =
-          (filterCoeffs.a0 * delayedSampleMono + filterCoeffs.a1 * lastFilterInMono -
-           filterCoeffs.b1 * lastFilterOutMono) /
-          (1 << kFilterCoeffsShift);
+        uint32_t delayedSampleIdx = (headIdx - wholeDelay) & delaylineLengthMask;
+        int32_t delayedSampleRight;
+        int32_t delayedSampleLeft;
+        int32_t delayedSampleMono;
+        if (fracQ8 == 0)
+        {
+            delayedSampleRight = pingpongDelaylineRight[delayedSampleIdx];
+            delayedSampleLeft = pingpongDelaylineLeft[delayedSampleIdx];
+            delayedSampleMono = monoDelayline[delayedSampleIdx];
+        }
+        else
+        {
+            uint32_t prevSampleIdx = (delayedSampleIdx - 1u) & delaylineLengthMask;
+            int32_t fQ8 = (int32_t)fracQ8;
+            int32_t r0 = pingpongDelaylineRight[delayedSampleIdx];
+            int32_t l0 = pingpongDelaylineLeft[delayedSampleIdx];
+            int32_t m0 = monoDelayline[delayedSampleIdx];
+            delayedSampleRight =
+              r0 + (((pingpongDelaylineRight[prevSampleIdx] - r0) * fQ8) >> kDelayTimeFracShift);
+            delayedSampleLeft =
+              l0 + (((pingpongDelaylineLeft[prevSampleIdx] - l0) * fQ8) >> kDelayTimeFracShift);
+            delayedSampleMono =
+              m0 + (((monoDelayline[prevSampleIdx] - m0) * fQ8) >> kDelayTimeFracShift);
+        }
+
+        int32_t filteredSampleRight = divCoeffShift(
+          filterCoeffs.a0 * delayedSampleRight + filterCoeffs.a1 * lastFilterInRight -
+          filterCoeffs.b1 * lastFilterOutRight);
+        int32_t filteredSampleLeft = divCoeffShift(
+          filterCoeffs.a0 * delayedSampleLeft + filterCoeffs.a1 * lastFilterInLeft -
+          filterCoeffs.b1 * lastFilterOutLeft);
+        int32_t filteredSampleMono = divCoeffShift(
+          filterCoeffs.a0 * delayedSampleMono + filterCoeffs.a1 * lastFilterInMono -
+          filterCoeffs.b1 * lastFilterOutMono);
 
         lastFilterInRight = delayedSampleRight;
         lastFilterInLeft = delayedSampleLeft;
@@ -222,29 +292,44 @@ AUDIO_CORE_RAM bool AudioEffectShortDelay::process(int16_t input[],
         *outputLeft++ = outL;
         *outputRight++ = outR;
 
-        int32_t inputShifted = ((*input++) << kFeedbackShift);
+        int16_t inSample = *input++;
+        int16_t saturatedLeft;
+        int16_t saturatedRight;
+        int16_t saturatedMono;
+        if (frozen)
+        {
+            // Infinite Freeze: mute new input and recirculate the delay buffer at unity.
+            saturatedLeft = (int16_t)delayedSampleRight;
+            saturatedRight = (int16_t)delayedSampleLeft;
+            saturatedMono = (int16_t)delayedSampleMono;
+        }
+        else
+        {
+            int32_t inputShifted = ((int32_t)inSample << kFeedbackShift);
 
-        newDelayedSampleLeft = inputShifted + filteredSampleRight * feedback;
-        newDelayedSampleRight = filteredSampleLeft * feedback;
-        newDelayedSampleMono = inputShifted + filteredSampleMono * feedback;
+            newDelayedSampleLeft = inputShifted + filteredSampleRight * (int32_t)curFeedback;
+            newDelayedSampleRight = filteredSampleLeft * (int32_t)curFeedback;
+            newDelayedSampleMono = inputShifted + filteredSampleMono * (int32_t)curFeedback;
 
-        static constexpr int32_t kFeedbackRoundBias = (1 << kFeedbackShift) - 1;
-        int16_t saturatedLeft = (int16_t)signed_saturate_rshift(
-          newDelayedSampleLeft + (newDelayedSampleLeft < 0 ? kFeedbackRoundBias : 0),
-          16,
-          kFeedbackShift);
-        int16_t saturatedRight = (int16_t)signed_saturate_rshift(
-          newDelayedSampleRight + (newDelayedSampleRight < 0 ? kFeedbackRoundBias : 0),
-          16,
-          kFeedbackShift);
-        int16_t saturatedMono = (int16_t)signed_saturate_rshift(
-          newDelayedSampleMono + (newDelayedSampleMono < 0 ? kFeedbackRoundBias : 0),
-          16,
-          kFeedbackShift);
+            static constexpr int32_t kFeedbackRoundBias = (1 << kFeedbackShift) - 1;
+            saturatedLeft = (int16_t)signed_saturate_rshift(
+              newDelayedSampleLeft + (newDelayedSampleLeft < 0 ? kFeedbackRoundBias : 0),
+              16,
+              kFeedbackShift);
+            saturatedRight = (int16_t)signed_saturate_rshift(
+              newDelayedSampleRight + (newDelayedSampleRight < 0 ? kFeedbackRoundBias : 0),
+              16,
+              kFeedbackShift);
+            saturatedMono = (int16_t)signed_saturate_rshift(
+              newDelayedSampleMono + (newDelayedSampleMono < 0 ? kFeedbackRoundBias : 0),
+              16,
+              kFeedbackShift);
+        }
 
         bool isSampleSilent =
-          isPingpong ? (outL == 0 && outR == 0 && saturatedLeft == 0 && saturatedRight == 0)
-                     : (outL == 0 && saturatedMono == 0);
+          !frozen &&
+          (isPingpong ? (outL == 0 && outR == 0 && saturatedLeft == 0 && saturatedRight == 0)
+                      : (outL == 0 && saturatedMono == 0));
         if (isSampleSilent)
         {
             if (silentSamplesCount < MAX_DELAYLINE_LENGTH)
@@ -264,5 +349,6 @@ AUDIO_CORE_RAM bool AudioEffectShortDelay::process(int16_t input[],
         monoDelayline[headSampleIdx] = saturatedMono;
     }
 
+    currentTimeQ8 = curTimeQ8;
     return true;
 }

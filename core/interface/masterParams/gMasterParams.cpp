@@ -1299,7 +1299,10 @@ void cMasterParams::showDelayRate()
 }
 void cMasterParams::showDelayFeedback()
 {
-    sprintf(delayFeedbackVal, "%d", mtProject.values.delayFeedback);
+    if (mtProject.values.delayFeedback >= 100)
+        sprintf(delayFeedbackVal, "Frz");
+    else
+        sprintf(delayFeedbackVal, "%d", mtProject.values.delayFeedback);
 
     uint8_t displayFeedbackTime = (uint8_t)map<int>(
       mtProject.values.delayFeedback, DELAY_FEEDBACK_MIN, DELAY_FEEDBACK_MAX, 0, 100);

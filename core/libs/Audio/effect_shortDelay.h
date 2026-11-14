@@ -28,6 +28,7 @@ class AudioEffectShortDelay : public AudioStream
     void setRate(uint8_t r);
     void setPingpongEnable(bool pp);
     void setSyncEnable(bool se);
+    void setFreeze(bool freeze);
     void setFilterFrequency(float frequency);
     virtual void update(void);
     bool process(int16_t input[], int16_t outputLeft[], int16_t outputRight[], int sampleCount);
@@ -36,7 +37,7 @@ class AudioEffectShortDelay : public AudioStream
     void unblockUpdate();
     bool isSilent() const
     {
-        return silentSamplesCount >= timeInSamples;
+        return !isFrozen && silentSamplesCount >= targetTimeInSamples;
     }
 
   private:
@@ -49,17 +50,22 @@ class AudioEffectShortDelay : public AudioStream
 
     static constexpr int kFilterCoeffsShift = 10;
     static constexpr int kFeedbackShift = 8;
+    static constexpr int kDelayTimeFracShift = 8;
     static constexpr uint16_t kMaxFilterCoeff = (1 << kFilterCoeffsShift) - 1;
     static constexpr float kMaxFeedback = 0.99f;
     static constexpr uint32_t delaylineLengthMask = MAX_DELAYLINE_LENGTH - 1;
     int16_t* pingpongDelaylineRight;
     int16_t* pingpongDelaylineLeft;
     int16_t* monoDelayline;
-    uint32_t headIdx;
+    uint32_t headIdx = 0;
     audio_block_t* inputQueueArray[1];
-    uint32_t timeInSamples;
-    uint8_t feedback;
+    uint32_t timeInSamples = 1;
+    uint32_t targetTimeInSamples = 1;
+    int32_t currentTimeQ8 = 1 << kDelayTimeFracShift;
+    uint8_t feedback = 0;
     bool noRefresh;
+    bool isFrozen = false;
+    bool hasTimeInit = false;
     uint8_t
       isPingpong; // uint8_t allows to use conditionally execution instead conditionally branch
     bool isSync;

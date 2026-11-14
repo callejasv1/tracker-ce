@@ -449,9 +449,18 @@ class AudioPlayMemory : public AudioStream
     uint16_t currentGranularLength = MIN_GRANULAR_LENGTH;
     const uint16_t* granularEnvelopeTab =
       nullptr; // wskaznik imitujacy tablice wplywajaca na amplitude próbek
+    uint32_t granularEnvStepQ16 = 0;
+    uint32_t granularCloudSeed = 0x13579BDFu;
 
     uint8_t granularPositionRefreshFlag = 1; // pozycja jest aktualizowana gdy nastepuje przejscie
                                              // pętli(audio) i ustawiona jest ta flaga
+
+    inline void updateGranularEnvStep()
+    {
+        int32_t span = (int32_t)constrainsInSamples.loopPoint2 - (int32_t)constrainsInSamples.loopPoint1;
+        granularEnvStepQ16 =
+          (span > 0) ? ((((uint32_t)(GRANULAR_LOOKUP_SIZE - 1)) << 16) / (uint32_t)span) : 0u;
+    }
     //********
     //********** Synth
     synthosc::Oscillator synthOsc;
