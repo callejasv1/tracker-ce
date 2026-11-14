@@ -418,7 +418,16 @@ void SampleImport::loadImportingSamplesData(FileManagerOperation::SampleLoadData
                 // check if contains audio data
                 if (instrumentFileSize <= sampleImportData[instrIdx].fileOffset)
                 {
-                    ptiCorrect = false;
+                    if (instrumentFileSize == sampleImportData[instrIdx].fileOffset &&
+                        mtProject.instrument[instrIdx].playMode == playModeSynth &&
+                        mtProject.instrument[instrIdx].sample.length == 0)
+                    {
+                        ptiCorrect = true;
+                    }
+                    else
+                    {
+                        ptiCorrect = false;
+                    }
                 }
                 // instruments with length != sample_data_size exception handling
                 else if (mtProject.instrument[instrIdx].sample.length == 0 ||
@@ -705,6 +714,11 @@ bool SampleImport::loadSampleDataToMemeory(int idx,
 
     if (sampleImportData->ptiFile)
     {
+        if (mtProject.instrument[idx].playMode == playModeSynth &&
+            mtProject.instrument[idx].sample.length == 0)
+        {
+            return true;
+        }
         uint32_t offsetFromStruct =
           sampleImportData->fileOffset; // + (sizeof(strInstrumentFile) - sizeof(strInstrument));
         uint32_t sizeLimit =

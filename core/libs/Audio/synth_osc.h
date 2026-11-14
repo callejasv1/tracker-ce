@@ -30,6 +30,8 @@ enum Mode : uint8_t
     kModeSync,        // Saw Osc B hard-synced to Osc A (sync lead)
     kModeCSaw,        // Notched "CS" saw (PW = notch width) + Osc B
     kModeSwarm,       // 3 detuned saws (light supersaw)
+    kModeFM,          // 2-Op Phase Modulation (Osc B -> Osc A phase) + Sub + Noise
+    kModeRing,        // Band-limited Ring Modulator (Osc A * Osc B) + Sub + Noise
     kModeCount
 };
 
@@ -52,7 +54,8 @@ struct Params
     uint8_t levelB; // 0..100
     uint8_t sub;    // 0..100
     uint8_t noise;  // 0..100
-    uint8_t pw;     // 0..100 (Pulse: 50%..5% duty, CSaw: notch width)
+    uint8_t pw;     // 0..100 (Pulse: 50%..5% duty, CSaw: notch width, FM: timbre)
+    uint8_t initialized; // kInitMagic once initialized
 };
 
 static constexpr uint8_t kMaxLevel = 100;
@@ -60,19 +63,21 @@ static constexpr int8_t kMinSemi = -24;
 static constexpr int8_t kMaxSemi = 24;
 static constexpr uint8_t kMaxDetune = 100;
 static constexpr uint8_t kMaxPw = 100;
+static constexpr uint8_t kInitMagic = 0xA5;
 
 // Per-block derived values (computed once per 128-sample block).
 struct BlockParams
 {
     uint32_t incA;
     uint32_t incB;
-    uint32_t incC;   // Swarm third saw
+    uint32_t incC;    // Swarm third saw
     uint32_t pwPhase; // pulse duty / CSaw notch end as phase threshold
-    uint32_t csawK;  // CSaw ramp scale (Q16)
-    int32_t gainA;   // Q12 gains
+    uint32_t csawK;   // CSaw ramp scale (Q16)
+    int32_t gainA;    // Q12 gains
     int32_t gainB;
     int32_t gainSub;
     int32_t gainNoise;
+    uint8_t fmPw;     // Clamped (pw + pwMod + 25) for FM brightness scaling (25..125)
 };
 
 // Maps a 0..100 level to a Q12 gain (4096 = unity) with a squared curve for
@@ -122,6 +127,8 @@ class Oscillator
             case kModeSync: renderSync(bp, out, n); break;
             case kModeCSaw: renderClassicDispatchB<kWaveCount>(waveB, bp, out, n); break;
             case kModeSwarm: renderSwarm(bp, out, n); break;
+            case kModeFM: renderFM(waveA, waveB, bp, out, n); break;
+            case kModeRing: renderRingDispatchA(waveA, waveB, bp, out, n); break;
             default: renderClassicDispatchA(waveA, waveB, bp, out, n); break;
         }
     }
@@ -396,6 +403,96 @@ class Oscillator
             *out++ = (int16_t)sat16(acc >> 13);
         } while (--n);
     }
+
+    // ---------------------------------------------------------------- mode: FM
+    // Fast integer parabolic sine approximation: phase (0..2^32-1) -> [-32767, +32767]
+    static inline int32_t sinParabolic(uint32_t p)
+    {
+        int32_t sign = (p & 0x80000000u) ? -1 : 1;
+        int32_t u = (int32_t)((p >> 16) & 0x7FFFu) - 16384; // [-16384, +16383]
+        int32_t q = (268435456 - (u * u)) >> 13;            // [0, 32768]
+        int32_t corr = (((q * (32768 - q)) >> 15) * 29) >> 7;
+        int32_t y = q - corr;
+        if (y > 32767)
+            y = 32767;
+        return sign * y;
+    }
+
+    static inline int32_t evalPhaseWave(uint8_t wave, uint32_t p, uint32_t pw)
+    {
+        if (wave == kWaveSaw)
+            return (int32_t)(p >> 16) - 32768;
+        if (wave == kWavePulse)
+            return (p < pw) ? 32767 : -32768;
+        return sinParabolic(p); // Triangle selects clean FM sine wave
+    }
+
+    void renderFM(uint8_t waveA, uint8_t waveB, const BlockParams& bp, int16_t* out, int n)
+    {
+        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase;
+        const int32_t gS = bp.gainSub, gN = bp.gainNoise;
+        const int32_t fmDepth = (bp.gainB * (int32_t)bp.fmPw) >> 7; // [0..4000]
+        uint32_t pA = phase[0];
+        uint32_t pB = phase[1];
+        do
+        {
+            pA += incA;
+            pB += incB;
+            uint32_t wrapA = (pA < incA) ? blepT(pA, incA) : 0xFFFFFFFFu;
+            int32_t modVal = evalPhaseWave(waveB, pB, pw);
+            uint32_t modPhase = pA + (static_cast<uint32_t>(modVal * fmDepth) << 5);
+            int32_t carVal = evalPhaseWave(waveA, modPhase, pw);
+            int32_t acc = carVal * 4096;
+            acc += stepSub(wrapA) * gS;
+            if (gN)
+                acc += nextNoise() * gN;
+            *out++ = (int16_t)sat16(acc >> 13);
+        } while (--n);
+        phase[0] = pA;
+        phase[1] = pB;
+    }
+
+    // -------------------------------------------------------------- mode: Ring
+    void renderRingDispatchA(uint8_t waveA, uint8_t waveB, const BlockParams& bp, int16_t* out, int n)
+    {
+        switch (waveA)
+        {
+            case kWavePulse: renderRingDispatchB<kWavePulse>(waveB, bp, out, n); break;
+            case kWaveTri: renderRingDispatchB<kWaveTri>(waveB, bp, out, n); break;
+            default: renderRingDispatchB<kWaveSaw>(waveB, bp, out, n); break;
+        }
+    }
+
+    template <Wave A>
+    void renderRingDispatchB(uint8_t waveB, const BlockParams& bp, int16_t* out, int n)
+    {
+        switch (waveB)
+        {
+            case kWavePulse: renderRing<A, kWavePulse>(bp, out, n); break;
+            case kWaveTri: renderRing<A, kWaveTri>(bp, out, n); break;
+            default: renderRing<A, kWaveSaw>(bp, out, n); break;
+        }
+    }
+
+    template <Wave A, Wave B>
+    void renderRing(const BlockParams& bp, int16_t* out, int n)
+    {
+        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase;
+        const int32_t gB = bp.gainB, gS = bp.gainSub, gN = bp.gainNoise;
+        const int32_t invGB = 4096 - gB;
+        uint32_t wrapA, wrapB;
+        do
+        {
+            int32_t a = step<A>(0, incA, pw, wrapA);
+            int32_t b = step<B>(1, incB, pw, wrapB);
+            int32_t ring = (a * b) >> 15;
+            int32_t mixed = (a * invGB + ring * gB) >> 12;
+            int32_t acc = mixed * 4096 + stepSub(wrapA) * gS;
+            if (gN)
+                acc += nextNoise() * gN;
+            *out++ = (int16_t)sat16(acc >> 13);
+        } while (--n);
+    }
 };
 
 // Pitch-ratio helper: 2^(cents/1200) for cents in [-4800, 4800], float.
@@ -442,7 +539,13 @@ static inline void buildBlockParams(const Params& p,
     bp.incA = incA;
     bp.incB = clampInc((float)incA * ratioB);
     bp.incC = clampInc((float)incA * ratioC);
-    bp.pwPhase = pwToPhase((int32_t)p.pw + pwMod, p.mode);
+    int32_t clampedPw = (int32_t)p.pw + pwMod;
+    if (clampedPw < 0)
+        clampedPw = 0;
+    if (clampedPw > kMaxPw)
+        clampedPw = kMaxPw;
+    bp.pwPhase = pwToPhase(clampedPw, p.mode);
+    bp.fmPw = (uint8_t)(clampedPw + 25);
     // CSaw ramp from 32768 at pw to 65535 at the cycle end: k (Q16) = 32767 / span16 * 65536
     uint32_t span16 = (0xFFFFFFFFu - bp.pwPhase) >> 16;
     bp.csawK = span16 ? (32767u << 16) / span16 : 0;

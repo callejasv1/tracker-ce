@@ -202,10 +202,13 @@ void cSamplePlayback::start(uint32_t options)
         editorInstrument = &mtProject.instrument[mtProject.values.lastUsedInstrument];
         if (editorInstrument->playMode == playModeSynth)
         {
-            auto& sp = editorInstrument->synthParams();
-            if (sp.waveA >= synthosc::kWaveCount || sp.mode >= synthosc::kModeCount || (sp.levelB == 0 && sp.sub == 0))
+            if (!editorInstrument->isSynthParamsInitialized())
             {
                 editorInstrument->initSynthParamsDefault();
+            }
+            if (editorInstrument->isActive && editorInstrument->sample.address == nullptr)
+            {
+                newFileManager.setInstrumentSampleAddress(mtProject.values.lastUsedInstrument, 1, 0);
             }
         }
         loadedInstrumentType = editorInstrument->sample.type;
@@ -248,22 +251,26 @@ void cSamplePlayback::start(uint32_t options)
         {
             lastSampleLength = editorInstrument->sample.length;
 
-            uint16_t start_end_width = editorInstrument->endPoint - editorInstrument->startPoint;
-
-            if (start_end_width <
-                MAX_16BIT / 4) // wysrodkowanie startPoint z zoomem jesli waski loop
+            if (editorInstrument->sample.length > 0)
             {
-                start_end_width += start_end_width / 20; // dodatkowe po 10% po bokach
+                uint16_t start_end_width =
+                  editorInstrument->endPoint - editorInstrument->startPoint;
 
-                GP.spectrumAutoZoomIn(editorInstrument->startPoint,
-                                      start_end_width,
-                                      editorInstrument->sample.length,
-                                      &zoom);
-            }
-            else
-            {
-                GP.spectrumResetZoom(
-                  editorInstrument->startPoint, editorInstrument->sample.length, &zoom);
+                if (start_end_width <
+                    MAX_16BIT / 4) // wysrodkowanie startPoint z zoomem jesli waski loop
+                {
+                    start_end_width += start_end_width / 20; // dodatkowe po 10% po bokach
+
+                    GP.spectrumAutoZoomIn(editorInstrument->startPoint,
+                                          start_end_width,
+                                          editorInstrument->sample.length,
+                                          &zoom);
+                }
+                else
+                {
+                    GP.spectrumResetZoom(
+                      editorInstrument->startPoint, editorInstrument->sample.length, &zoom);
+                }
             }
         }
 
@@ -723,6 +730,16 @@ static void functPads(uint8_t pad, uint8_t state, int16_t velo)
 
 static void functButton0(uint8_t state)
 {
+    if (SP->editorInstrument->playMode == playModeSynth && SP->synthScreenMode2)
+    {
+        if (state == buttonPress)
+        {
+            SP->selectedPlace = 0;
+            SP->activateLabelsBorder();
+        }
+        return;
+    }
+
     if ((SP->editorInstrument->playMode == playModeBeatSlice) ||
         (SP->editorInstrument->playMode == playModeSlice))
     {
@@ -1146,6 +1163,10 @@ static void functButton5()
     else if (SP->editorInstrument->playMode == playModeSynth)
     {
         SP->synthScreenMode2 = !SP->synthScreenMode2;
+        if (!SP->synthScreenMode2 && SP->selectedPlace == 0)
+        {
+            SP->selectedPlace = 1;
+        }
         SP->showDefaultScreen();
         return;
     }
@@ -1212,8 +1233,12 @@ static void functEncoder(int16_t value)
         {
             case 0:
             {
-                if ((SP->editorInstrument->playMode == playModeSlice) ||
-                    (SP->editorInstrument->playMode == playModeBeatSlice))
+                if (SP->editorInstrument->playMode == playModeSynth && SP->synthScreenMode2)
+                {
+                    SP->modSynthLevelB(value);
+                }
+                else if ((SP->editorInstrument->playMode == playModeSlice) ||
+                         (SP->editorInstrument->playMode == playModeBeatSlice))
                 {
                     modSliceSelect(value);
                 }
@@ -1331,6 +1356,10 @@ static void functEncoder(int16_t value)
                     if (value != 0)
                     {
                         SP->synthScreenMode2 = !SP->synthScreenMode2;
+                        if (!SP->synthScreenMode2 && SP->selectedPlace == 0)
+                        {
+                            SP->selectedPlace = 1;
+                        }
                         SP->showDefaultScreen();
                     }
                 }
@@ -1361,8 +1390,12 @@ static void functLeft()
     {
         case 1:
         {
-            if ((SP->editorInstrument->playMode == playModeSlice) ||
-                (SP->editorInstrument->playMode == playModeBeatSlice))
+            if (SP->editorInstrument->playMode == playModeSynth && SP->synthScreenMode2)
+            {
+                SP->selectedPlace = 0;
+            }
+            else if ((SP->editorInstrument->playMode == playModeSlice) ||
+                     (SP->editorInstrument->playMode == playModeBeatSlice))
             {
                 if (!SP->sliceScreenMode2)
                 {
@@ -2017,10 +2050,31 @@ static void changePlayModeSelection(int16_t value)
 
     if (SP->editorInstrument->playMode == playModeSynth)
     {
-        auto& sp = SP->editorInstrument->synthParams();
-        if (sp.waveA >= synthosc::kWaveCount || sp.mode >= synthosc::kModeCount || (sp.levelB == 0 && sp.sub == 0))
+        if (SP->editorInstrument->isActive == 0)
+        {
+            newFileManager.setDefaultActiveInstrument(SP->editorInstrument);
+            SP->editorInstrument->playMode = playModeSynth;
+            SP->editorInstrument->initSynthParamsDefault();
+            if (SP->editorInstrument->sample.file_name[0] == '\0')
+            {
+                snprintf(SP->editorInstrument->sample.file_name,
+                         SAMPLE_NAME_SIZE,
+                         "Synth %02d",
+                         mtProject.values.lastUsedInstrument + 1);
+            }
+            newFileManager.setInstrumentSampleAddress(mtProject.values.lastUsedInstrument, 1, 0);
+        }
+        else if (!SP->editorInstrument->isSynthParamsInitialized())
         {
             SP->editorInstrument->initSynthParamsDefault();
+        }
+    }
+    else if (SP->editorInstrument->sample.length == 0 && SP->editorInstrument->isActive != 0)
+    {
+        SP->editorInstrument->isActive = 0;
+        if (strncmp(SP->editorInstrument->sample.file_name, "Synth ", 6) == 0)
+        {
+            SP->editorInstrument->sample.file_name[0] = '\0';
         }
     }
 
@@ -2029,6 +2083,14 @@ static void changePlayModeSelection(int16_t value)
     display.setControlValue(SP->playModeListControl,
                             SP->editorInstrument->playMode + SP->editorInstrument->sample.type);
     display.refreshControl(SP->playModeListControl);
+
+    strSampleMemory* editorSampleMemory =
+      &mtProject.sampleMemory[mtProject.values.lastUsedInstrument];
+    GP.processSpectrum(editorSampleMemory,
+                       SP->editorInstrument,
+                       &SP->zoom,
+                       &SP->spectrum[strSampleMemory::Channel::kLeft],
+                       strSampleMemory::Channel::kLeft);
 
     SP->showDefaultScreen();
     SP->lightUpPadBoard();
@@ -3530,6 +3592,20 @@ static void functMenu(uint8_t state)
     }
 }
 
+void cSamplePlayback::refreshSynthWaveform()
+{
+    if (!editorInstrument || editorInstrument->playMode != playModeSynth)
+        return;
+    strSampleMemory* editorSampleMemory =
+      &mtProject.sampleMemory[mtProject.values.lastUsedInstrument];
+    GP.processSpectrum(editorSampleMemory,
+                       editorInstrument,
+                       &zoom,
+                       &spectrum[strSampleMemory::Channel::kLeft],
+                       strSampleMemory::Channel::kLeft);
+    display.refreshControl(spectrumControl[0]);
+}
+
 void cSamplePlayback::modSynthMode(int16_t value)
 {
     if (!editorInstrument) return;
@@ -3540,6 +3616,7 @@ void cSamplePlayback::modSynthMode(int16_t value)
     sp.mode = (uint8_t)newMode;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
+    refreshSynthWaveform();
 }
 
 void cSamplePlayback::modSynthOscA(int16_t value)
@@ -3552,6 +3629,7 @@ void cSamplePlayback::modSynthOscA(int16_t value)
     sp.waveA = (uint8_t)newWave;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
+    refreshSynthWaveform();
 }
 
 void cSamplePlayback::modSynthOscB(int16_t value)
@@ -3564,6 +3642,7 @@ void cSamplePlayback::modSynthOscB(int16_t value)
     sp.waveB = (uint8_t)newWave;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
+    refreshSynthWaveform();
 }
 
 void cSamplePlayback::modSynthDetune(int16_t value)
@@ -3576,6 +3655,7 @@ void cSamplePlayback::modSynthDetune(int16_t value)
     sp.detune = (uint8_t)newDetune;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
+    refreshSynthWaveform();
 }
 
 void cSamplePlayback::modSynthSemiB(int16_t value)
@@ -3588,6 +3668,7 @@ void cSamplePlayback::modSynthSemiB(int16_t value)
     sp.semiB = (int8_t)newSemi;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
+    refreshSynthWaveform();
 }
 
 void cSamplePlayback::modSynthPW(int16_t value)
@@ -3600,6 +3681,7 @@ void cSamplePlayback::modSynthPW(int16_t value)
     sp.pw = (uint8_t)newPW;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
+    refreshSynthWaveform();
 }
 
 void cSamplePlayback::modSynthSub(int16_t value)
@@ -3612,6 +3694,7 @@ void cSamplePlayback::modSynthSub(int16_t value)
     sp.sub = (uint8_t)newSub;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
+    refreshSynthWaveform();
 }
 
 void cSamplePlayback::modSynthNoise(int16_t value)
@@ -3624,4 +3707,18 @@ void cSamplePlayback::modSynthNoise(int16_t value)
     sp.noise = (uint8_t)newNoise;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
+    refreshSynthWaveform();
+}
+
+void cSamplePlayback::modSynthLevelB(int16_t value)
+{
+    if (!editorInstrument) return;
+    auto& sp = editorInstrument->synthParams();
+    int newLevel = (int)sp.levelB + value;
+    if (newLevel < 0) newLevel = 0;
+    if (newLevel > 100) newLevel = 100;
+    sp.levelB = (uint8_t)newLevel;
+    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    showSynthValues();
+    refreshSynthWaveform();
 }

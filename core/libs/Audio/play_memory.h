@@ -461,6 +461,9 @@ class AudioPlayMemory : public AudioStream
     int16_t synthMod = 0;
     int16_t synthPwMod = 0;
     bool synthOscInitialized = false;
+    uint8_t lastSynthMode = 0xFF;
+    int8_t lastSynthSemiB = 127;
+    uint8_t lastSynthDetune = 255;
     //********
 
     //*************** Zmienne wymuszajace zmiany parametrow instrumentow przez Sequencer lub

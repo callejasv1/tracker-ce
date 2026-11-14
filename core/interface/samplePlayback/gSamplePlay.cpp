@@ -839,7 +839,7 @@ void cSamplePlayback::showSynthValues()
     if (editorInstrument == nullptr) return;
     auto& sp = editorInstrument->synthParams();
 
-    static const char* const kModeNames[] = { "Classic", "Sync", "CSaw", "Swarm" };
+    static const char* const kModeNames[] = { "Classic", "Sync", "CSaw", "Swarm", "FM", "Ring" };
     static const char* const kWaveNames[] = { "Saw", "Pulse", "Triangle" };
 
     display.setAddControlStyle(label[5], controlStyleSpecialFx2);
@@ -869,6 +869,7 @@ void cSamplePlayback::showSynthValues()
 
         snprintf(synthDetuneText, sizeof(synthDetuneText), "%d", (int)sp.detune);
 
+        display.setControlText2(label[0], "-");
         display.setControlText2(label[1], synthModeText);
         display.setControlText2(label[2], synthOscAText);
         display.setControlText2(label[3], synthOscBText);
@@ -879,25 +880,26 @@ void cSamplePlayback::showSynthValues()
         labelDataMore.dotIndicator.count = 2;
         labelDataMore.dotIndicator.current = 1;
 
-        display.setControlText(label[0], "Preview");
+        display.setControlText(label[0], "Osc B Lvl");
         display.setControlText(label[1], "Semi B");
         display.setControlText(label[2], "Pulse W");
         display.setControlText(label[3], "Sub Lvl");
         display.setControlText(label[4], "Noise");
         display.setControlText(label[5], "More");
 
+        snprintf(synthLevelBText, sizeof(synthLevelBText), "%d%%", (int)sp.levelB);
         snprintf(synthSemiBText, sizeof(synthSemiBText), "%+d st", (int)sp.semiB);
         snprintf(synthPwText, sizeof(synthPwText), "%d%%", (int)sp.pw);
         snprintf(synthSubText, sizeof(synthSubText), "%d%%", (int)sp.sub);
         snprintf(synthNoiseText, sizeof(synthNoiseText), "%d%%", (int)sp.noise);
 
+        display.setControlText2(label[0], synthLevelBText);
         display.setControlText2(label[1], synthSemiBText);
         display.setControlText2(label[2], synthPwText);
         display.setControlText2(label[3], synthSubText);
         display.setControlText2(label[4], synthNoiseText);
     }
 
-    display.setControlText2(label[0], "-");
     display.setControlText2(label[5], "");
 
     for (uint8_t i = 0; i <= 5; i++)

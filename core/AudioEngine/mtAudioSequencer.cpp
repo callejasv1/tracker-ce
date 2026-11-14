@@ -459,6 +459,9 @@ void playerEngine::fxPositionWavetable(uint8_t fx_val, uint8_t fx_n)
 
     uint8_t maxFxPosition = sequencer.getFxMax(Sequencer::strFxConsts::FX_TYPE_POSITION);
     uint8_t minFxPosition = sequencer.getFxMin(Sequencer::strFxConsts::FX_TYPE_POSITION);
+    uint32_t maxPos = (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth)
+                        ? 100u
+                        : mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber;
 
     if (fx_n == MOST_SIGNIFICANT_FX)
     {
@@ -467,7 +470,7 @@ void playerEngine::fxPositionWavetable(uint8_t fx_val, uint8_t fx_n)
                           minFxPosition,
                           maxFxPosition,
                           0,
-                          mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber);
+                          maxPos);
     }
     else if (fx_n == LEAST_SIGNIFICANT_FX)
     {
@@ -479,7 +482,7 @@ void playerEngine::fxPositionWavetable(uint8_t fx_val, uint8_t fx_n)
               minFxPosition,
               maxFxPosition,
               0,
-              mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber);
+              maxPos);
         }
     }
 
@@ -1595,13 +1598,17 @@ void playerEngine::endFxPositionWavetable(uint8_t fx_n)
         {
             uint8_t maxFxPosition = sequencer.getFxMax(Sequencer::strFxConsts::FX_TYPE_POSITION);
             uint8_t minFxPosition = sequencer.getFxMin(Sequencer::strFxConsts::FX_TYPE_POSITION);
+            uint32_t maxPos =
+              (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth)
+                ? 100u
+                : mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber;
 
             currentSeqModValues.wavetablePosition = mapClamped<int>(
               lastSeqVal[otherFx_n],
               minFxPosition,
               maxFxPosition,
               0,
-              mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber);
+              maxPos);
         }
     }
 
@@ -2568,6 +2575,15 @@ void playerEngine::clearFxPositionWavetable()
     }
     else
     {
+        if (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth)
+        {
+            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+            {
+                playMemPtr[channel]->clearWavetableWindowForceFlag();
+            }
+            return;
+        }
+
         uint32_t localWtPos = mtProject.instrument[currentInstrument_idx].wavetableCurrentWindow;
         int32_t localWtMod =
           currentEnvelopeModification[envWtPos] *

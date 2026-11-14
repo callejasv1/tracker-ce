@@ -34,6 +34,15 @@ bool cFileManager::saveSampleDataToWorkspace(int idx)
     {
         return true;
     }
+    if (mtProject.instrument[idx].sample.length == 0)
+    {
+        if (mtProject.instrument[idx].playMode == playModeSynth)
+        {
+            changesFlags.instrument[idx] = 1;
+            saveInstrumentStructToWorkspace(idx);
+        }
+        return true;
+    }
 
     sprintf(currentCopyDestPath, cWorkspaceInstrumentFileFormatNew, idx + 1);
 

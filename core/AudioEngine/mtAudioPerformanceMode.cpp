@@ -409,6 +409,27 @@ void playerEngine::changeWavetableWindowPerformanceMode(int16_t value)
                                   // sie wczesniej z funkcji
     }
 
+    if (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth)
+    {
+        int32_t basePw =
+          (trackControlParameter[(int)controlType::sequencerMode]
+                                [(int)parameterList::wavetablePosition] ||
+           trackControlParameter[(int)controlType::sequencerMode2]
+                                [(int)parameterList::wavetablePosition])
+            ? (int32_t)currentSeqModValues.wavetablePosition
+            : (int32_t)mtProject.instrument[currentInstrument_idx].synthParams().pw;
+        int32_t targetPw = std::clamp<int32_t>(basePw + value, 0, 100);
+        currentPerformanceValues.wavetablePosition = (uint32_t)targetPw;
+        trackControlParameter[(int)controlType::performanceMode]
+                             [(int)parameterList::wavetablePosition] = 1;
+        for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+        {
+            playMemPtr[channel]->setWavetableWindowForceFlag();
+            playMemPtr[channel]->setForcedWavetableWindow(currentPerformanceValues.wavetablePosition);
+        }
+        return;
+    }
+
     uint32_t wavetableWindow;
 
     if (trackControlParameter[(int)controlType::sequencerMode]

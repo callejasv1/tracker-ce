@@ -349,7 +349,8 @@ void cFileManager::exportSamplesStart()
         moveToNextOperationStep();
         return;
     }
-    if (mtProject.instrument[currentInstrument].isActive == 0)
+    if (mtProject.instrument[currentInstrument].isActive == 0 ||
+        mtProject.instrument[currentInstrument].sample.length == 0)
     {
         currentInstrument++;
         return;

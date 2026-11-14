@@ -449,6 +449,7 @@ enum enModDestination : uint8_t
     modDestDetune,
     modDestSubLevel,
     modDestNoiseLevel,
+    modDestOscBLevel,
     modDestCount
 };
 
@@ -742,6 +743,16 @@ struct strInstrument
         sp.sub = 25;
         sp.noise = 0;
         sp.pw = 50;
+        sp.initialized = synthosc::kInitMagic;
+    }
+
+    bool isSynthParamsInitialized() const
+    {
+        const auto& sp = synthParams();
+        return sp.initialized == synthosc::kInitMagic &&
+               sp.mode < synthosc::kModeCount &&
+               sp.waveA < synthosc::kWaveCount &&
+               sp.waveB < synthosc::kWaveCount;
     }
 
     bool isEnvEnabled(uint8_t envIdx) const

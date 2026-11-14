@@ -7,6 +7,7 @@
 #include "VoiceStreamManager.h"
 #include "graphicProcessing.h"
 #include "mtAudioEngine.h"
+#include "synth_osc.h"
 #include <algorithm>
 #include <cr_section_macros.h>
 
@@ -173,6 +174,67 @@ void cGraphicProcessing::processSpectrum(strSampleMemory* sampleMemory,
 
         spectrum->spectrumType = 1;
 
+        return;
+    }
+
+    if (instrument != nullptr && instrument->playMode == playModeSynth)
+    {
+        synthosc::Params sp = instrument->synthParams();
+        if (!instrument->isSynthParamsInitialized())
+        {
+            sp.mode = 0;
+            sp.waveA = 0;
+            sp.waveB = 0;
+            sp.semiB = 0;
+            sp.detune = 12;
+            sp.levelB = 75;
+            sp.sub = 25;
+            sp.noise = 0;
+            sp.pw = 50;
+        }
+        synthosc::Oscillator previewOsc;
+        previewOsc.reset();
+        float ratioB = 1.0f;
+        float ratioC = 1.0f;
+        synthosc::computeRatios(sp, ratioB, ratioC);
+        // 2 cycles of Osc A across 600 pixels: 2 * 2^32 / 600 = 14316558u
+        const uint32_t incA = 14316558u;
+        synthosc::BlockParams bp;
+        synthosc::buildBlockParams(sp, incA, ratioB, ratioC, 0, bp);
+
+        int16_t block[128];
+        uint16_t pixelIdx = 0;
+        while (pixelIdx < 600)
+        {
+            uint16_t count = 600 - pixelIdx;
+            if (count > 128)
+                count = 128;
+            previewOsc.render(sp.mode, sp.waveA, sp.waveB, bp, block, count);
+            for (uint16_t i = 0; i < count; i++)
+            {
+                int8_t v = (int8_t)(block[i] / 300);
+                uint16_t x = pixelIdx + i;
+                spectrum->upperData[x] = v;
+                spectrum->lowerData[x] = v;
+                if (x > 0)
+                {
+                    int8_t prev =
+                      (int8_t)((spectrum->upperData[x - 1] + spectrum->lowerData[x - 1]) / 2);
+                    if (prev > v)
+                    {
+                        spectrum->upperData[x] = prev;
+                        spectrum->lowerData[x] = v;
+                    }
+                    else if (prev < v)
+                    {
+                        spectrum->upperData[x] = v;
+                        spectrum->lowerData[x] = prev;
+                    }
+                }
+            }
+            pixelIdx += count;
+        }
+        spectrum->spectrumType = 1;
         return;
     }
 

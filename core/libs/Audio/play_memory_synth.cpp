@@ -37,6 +37,7 @@ AUDIO_CORE_FLASH void AudioPlayMemory::playSynth(uint8_t instrIdx, int8_t note)
     }
     synthMod = 0;
     synthPwMod = 0;
+    lastSynthMode = 0xFF;
 
     playing = 1;
 
@@ -81,12 +82,22 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateSynth()
 
     const auto& sp = mtProject.instrument[currentInstrIdx].synthParams();
 
-    // Pitch ratios for Osc B / Swarm
-    synthosc::computeRatios(sp, synthRatioB, synthRatioC);
+    // Pitch ratios for Osc B / Swarm (recompute only when ratio params change)
+    if (sp.mode != lastSynthMode || sp.semiB != lastSynthSemiB || sp.detune != lastSynthDetune)
+    {
+        synthosc::computeRatios(sp, synthRatioB, synthRatioC);
+        lastSynthMode = sp.mode;
+        lastSynthSemiB = sp.semiB;
+        lastSynthDetune = sp.detune;
+    }
 
     // Pulse width modulation:
-    // Slot 3 (envWtPos) sets synthPwMod (-100..+100)
+    // Slot 3 (envWtPos) sets synthPwMod (-100..+100), Sequencer FX Position overrides base PW
     int32_t pwMod = (int32_t)synthPwMod;
+    if (wavetableWindowForceFlag)
+    {
+        pwMod += (int32_t)forcedWavetableWindow - (int32_t)sp.pw;
+    }
     if (synthMod != 0 && mtProject.instrument[currentInstrIdx].modDestination == modDestPulseWidth)
     {
         pwMod += (int32_t)synthMod;
@@ -98,20 +109,26 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateSynth()
     if (synthMod != 0)
     {
         float modVal = (float)synthMod / 100.0f;
-        if (mtProject.instrument[currentInstrIdx].modDestination == modDestDetune)
+        uint8_t modDest = mtProject.instrument[currentInstrIdx].modDestination;
+        if (modDest == modDestDetune)
         {
             float detRatio = synthosc::centsToRatio((int32_t)(modVal * 100.0f));
             synthBlockParams.incB = (uint32_t)((float)synthBlockParams.incB * detRatio);
         }
-        else if (mtProject.instrument[currentInstrIdx].modDestination == modDestSubLevel)
+        else if (modDest == modDestSubLevel)
         {
             int32_t subLevel = std::clamp<int32_t>((int32_t)sp.sub + (int32_t)(modVal * 100.0f), 0, 100);
             synthBlockParams.gainSub = synthosc::levelToGainQ12((uint8_t)subLevel);
         }
-        else if (mtProject.instrument[currentInstrIdx].modDestination == modDestNoiseLevel)
+        else if (modDest == modDestNoiseLevel)
         {
             int32_t noiseLevel = std::clamp<int32_t>((int32_t)sp.noise + (int32_t)(modVal * 100.0f), 0, 100);
             synthBlockParams.gainNoise = synthosc::levelToGainQ12((uint8_t)noiseLevel) >> 1;
+        }
+        else if (modDest == modDestOscBLevel)
+        {
+            int32_t levelB = std::clamp<int32_t>((int32_t)sp.levelB + (int32_t)(modVal * 100.0f), 0, 100);
+            synthBlockParams.gainB = synthosc::levelToGainQ12((uint8_t)levelB);
         }
     }
 

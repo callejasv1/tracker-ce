@@ -86,7 +86,8 @@ const char* const modDestNames[modDestCount] = {
     "Pulse Width",
     "Detune",
     "Sub Level",
-    "Noise Level"
+    "Noise Level",
+    "Osc B Level"
 };
 
 static char modDestLabelBuf[32] = "Mod: Off";

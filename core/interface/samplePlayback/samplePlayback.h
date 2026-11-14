@@ -271,6 +271,7 @@ class cSamplePlayback : public ModuleBase
     char synthPwText[15];
     char synthSubText[15];
     char synthNoiseText[15];
+    char synthLevelBText[15];
 
     void showSynthValues();
     void modSynthMode(int16_t value);
@@ -281,6 +282,8 @@ class cSamplePlayback : public ModuleBase
     void modSynthPW(int16_t value);
     void modSynthSub(int16_t value);
     void modSynthNoise(int16_t value);
+    void modSynthLevelB(int16_t value);
+    void refreshSynthWaveform();
 
     float samplePosToTime(uint32_t pos);
 

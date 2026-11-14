@@ -147,7 +147,10 @@ void InstrumentCopy::copyInstrumentSampleMemory(int srcIdx, int destIdx)
         size *= 2;
     }
 
-    memcpy(destAddr, srcAddr, size);
+    if (size > 0 && destAddr != nullptr && srcAddr != nullptr)
+    {
+        memcpy(destAddr, srcAddr, size);
+    }
 }
 
 bool InstrumentCopy::copyInstruments(int srcIdx, int destIdx, uint8_t& copyState)

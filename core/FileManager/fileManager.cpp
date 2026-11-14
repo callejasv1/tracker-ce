@@ -892,6 +892,11 @@ bool cFileManager::isPtiFileValid(char* path,
     // check if contains audio data
     if (instrumentFileSize <= instrumentFileDataOffset)
     {
+        if (instrumentFileSize == instrumentFileDataOffset && expectedSamplesCountPerChannel == 0)
+        {
+            stereo = false;
+            return true;
+        }
         return false;
     }
 

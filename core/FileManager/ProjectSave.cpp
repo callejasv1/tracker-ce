@@ -444,6 +444,10 @@ bool ProjectSave::copyInstruments(int idx, uint8_t& copyState)
     {
         uint32_t dataSizeBytes = mtProject.instrument[idx].sample.length *
                                  (newFileManager.isInstrumentStereo(idx) ? 4 : 2);
+        if (dataSizeBytes == 0)
+        {
+            return true;
+        }
 
         if (mtProject.sampleMemory[idx].isStreamed)
         {

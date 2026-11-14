@@ -267,6 +267,26 @@ bool cFileManager::loadSampleData(int idx,
             }
         }
 
+        if (mtProject.instrument[idx].playMode == playModeSynth &&
+            mtProject.instrument[idx].sample.length == 0)
+        {
+            mtProject.instrument[idx].isActive = 1;
+            mtProject.sampleMemory[idx].isStreamed = false;
+            mtProject.sampleMemory[idx].isStereo = false;
+            mtProject.sampleMemory[idx].ramFrames = 0;
+            mtProject.sampleMemory[idx].preCacheFrames = 0;
+            if (mtProject.instrument[idx].sample.file_name[0] == '\0')
+            {
+                snprintf(mtProject.instrument[idx].sample.file_name,
+                         SAMPLE_NAME_SIZE,
+                         "Synth %02d",
+                         idx + 1);
+            }
+            newFileManager.clearSampleChanged(idx);
+            sampleLoadStep = 0;
+            return true;
+        }
+
         if (mtProject.sampleMemory[idx].isStreamed)
         {
             sampleDataSizeMax = mtProject.sampleMemory[idx].ramFrames *
