@@ -3614,6 +3614,13 @@ void cSamplePlayback::modSynthMode(int16_t value)
     if (newMode < 0) newMode = 0;
     if (newMode >= synthosc::kModeCount) newMode = synthosc::kModeCount - 1;
     sp.mode = (uint8_t)newMode;
+    if (sp.mode != synthosc::kModePD)
+    {
+        if (sp.waveA >= synthosc::kWaveCount)
+            sp.waveA = synthosc::kWaveCount - 1;
+        if (sp.waveB >= synthosc::kWaveCount)
+            sp.waveB = synthosc::kWaveCount - 1;
+    }
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
     refreshSynthWaveform();
@@ -3623,9 +3630,10 @@ void cSamplePlayback::modSynthOscA(int16_t value)
 {
     if (!editorInstrument) return;
     auto& sp = editorInstrument->synthParams();
+    const int maxWave = synthosc::maxWaveCount(sp.mode);
     int newWave = (int)sp.waveA + (value > 0 ? 1 : -1);
     if (newWave < 0) newWave = 0;
-    if (newWave >= synthosc::kWaveCount) newWave = synthosc::kWaveCount - 1;
+    if (newWave >= maxWave) newWave = maxWave - 1;
     sp.waveA = (uint8_t)newWave;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();
@@ -3636,9 +3644,10 @@ void cSamplePlayback::modSynthOscB(int16_t value)
 {
     if (!editorInstrument) return;
     auto& sp = editorInstrument->synthParams();
+    const int maxWave = synthosc::maxWaveCount(sp.mode);
     int newWave = (int)sp.waveB + (value > 0 ? 1 : -1);
     if (newWave < 0) newWave = 0;
-    if (newWave >= synthosc::kWaveCount) newWave = synthosc::kWaveCount - 1;
+    if (newWave >= maxWave) newWave = maxWave - 1;
     sp.waveB = (uint8_t)newWave;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showSynthValues();

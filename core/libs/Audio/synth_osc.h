@@ -33,6 +33,7 @@ enum Mode : uint8_t
     kModeFM,          // 2-Op Phase Modulation (Osc B -> Osc A phase) + Sub + Noise
     kModeRing,        // Band-limited Ring Modulator (Osc A * Osc B) + Sub + Noise
     kModeFold,        // West-Coast Wavefolder (PW = Fold Drive, Osc B Lvl = Symmetry/Cross-Fold)
+    kModePD,          // Casio CZ Phase Distortion (8 CZ waveforms, PW = DCW distortion/resonance)
     kModeCount
 };
 
@@ -43,6 +44,26 @@ enum Wave : uint8_t
     kWaveTri,
     kWaveCount
 };
+
+enum CzWave : uint8_t
+{
+    kCzSaw = 0,  // Cosine phase compressed to Sawtooth
+    kCzSquare,   // Cosine phase held at +/-1 plateaus (Square)
+    kCzPulse,    // Narrowed full cosine cycle + flat bottom (DC-compensated)
+    kCzDblSine,  // Split double-cosine (morphs 1x -> 2x octave)
+    kCzSawPulse, // Half-square / half-cosine hybrid (DC-compensated)
+    kCzResoSaw,  // Synced resonant cosine * falling saw window
+    kCzResoTri,  // Synced resonant cosine * triangle window
+    kCzResoTrap, // Synced resonant cosine * trapezoid window
+    kCzWaveCount
+};
+
+// Returns the valid wave index count for the given oscillator mode.
+static inline uint8_t maxWaveCount(uint8_t mode)
+{
+    return (mode == kModePD) ? static_cast<uint8_t>(kCzWaveCount)
+                             : static_cast<uint8_t>(kWaveCount);
+}
 
 // User-facing parameters (stored per instrument, UI units).
 struct Params
@@ -71,14 +92,16 @@ struct BlockParams
 {
     uint32_t incA;
     uint32_t incB;
-    uint32_t incC;    // Swarm third saw
-    uint32_t pwPhase; // pulse duty / CSaw notch end as phase threshold
-    uint32_t csawK;   // CSaw ramp scale (Q16)
-    int32_t gainA;    // Q12 gains
+    uint32_t incC;     // Swarm third saw
+    uint32_t pwPhase;  // pulse duty / CSaw notch end as phase threshold
+    uint32_t pwPhaseB; // Osc B pulse duty with Timbre B mod
+    uint32_t csawK;    // CSaw ramp scale (Q16)
+    int32_t gainA;     // Q12 gains
     int32_t gainB;
     int32_t gainSub;
     int32_t gainNoise;
-    uint8_t fmPw;     // Clamped (pw + pwMod + 25) for FM brightness scaling (25..125)
+    uint8_t fmPw;      // Clamped (pw + pwMod + 25) for FM brightness scaling (25..125)
+    int16_t timbreBMod;
 };
 
 // Maps a 0..100 level to a Q12 gain (4096 = unity) with a squared curve for
@@ -118,6 +141,7 @@ class Oscillator
         subNext = 0;
         subHigh = 0;
         noise = 0x1234567u;
+        lastFmMod = 0;
     }
 
     // Renders n samples (n must be > 0) into out.
@@ -131,6 +155,7 @@ class Oscillator
             case kModeFM: renderFM(waveA, waveB, bp, out, n); break;
             case kModeRing: renderRingDispatchA(waveA, waveB, bp, out, n); break;
             case kModeFold: renderFold(waveA, waveB, bp, out, n); break;
+            case kModePD: renderPD(waveA, waveB, bp, out, n); break;
             default: renderClassicDispatchA(waveA, waveB, bp, out, n); break;
         }
     }
@@ -141,6 +166,7 @@ class Oscillator
     int32_t subNext;
     uint32_t subHigh;
     uint32_t noise;
+    int32_t lastFmMod;
 
     // ---------------------------------------------------------------- helpers
     static inline int32_t sat16(int32_t x)
@@ -314,7 +340,7 @@ class Oscillator
     template <uint8_t A, Wave B>
     void renderClassic(const BlockParams& bp, int16_t* out, int n)
     {
-        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase, k = bp.csawK;
+        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase, pwB = bp.pwPhaseB, k = bp.csawK;
         const int32_t gA = bp.gainA, gB = bp.gainB, gS = bp.gainSub, gN = bp.gainNoise;
         uint32_t wrapA, wrapB;
         do
@@ -326,7 +352,7 @@ class Oscillator
                 a = step<(Wave)A>(0, incA, pw, wrapA);
             int32_t acc = a * gA;
             if (gB)
-                acc += step<B>(1, incB, pw, wrapB) * gB;
+                acc += step<B>(1, incB, pwB, wrapB) * gB;
             int32_t s = stepSub(wrapA);
             acc += s * gS;
             if (gN)
@@ -390,7 +416,15 @@ class Oscillator
     // -------------------------------------------------------------- mode: swarm
     void renderSwarm(const BlockParams& bp, int16_t* out, int n)
     {
-        const uint32_t incA = bp.incA, incB = bp.incB, incC = bp.incC;
+        const uint32_t incA = bp.incA, incB = bp.incB;
+        uint32_t incC = bp.incC;
+        if (bp.timbreBMod != 0)
+        {
+            int32_t delta = (int32_t)(((int64_t)incC * bp.timbreBMod) >> 11);
+            int32_t adj = (int32_t)incC + delta;
+            if (adj >= (1 << 17) && adj <= 0x70000000)
+                incC = (uint32_t)adj;
+        }
         const int32_t gS = bp.gainSub, gN = bp.gainNoise;
         constexpr int32_t kSawGain = 2730; // ~2/3 each
         uint32_t wrapA, dummy;
@@ -431,9 +465,11 @@ class Oscillator
 
     void renderFM(uint8_t waveA, uint8_t waveB, const BlockParams& bp, int16_t* out, int n)
     {
-        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase;
+        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase, pwB = bp.pwPhaseB;
         const int32_t gS = bp.gainSub, gN = bp.gainNoise;
         const int32_t fmDepth = (bp.gainB * (int32_t)bp.fmPw) >> 7; // [0..4000]
+        const int32_t fbAmt = bp.timbreBMod;
+        int32_t lastMod = lastFmMod;
         uint32_t pA = phase[0];
         uint32_t pB = phase[1];
         do
@@ -441,7 +477,9 @@ class Oscillator
             pA += incA;
             pB += incB;
             uint32_t wrapA = (pA < incA) ? blepT(pA, incA) : 0xFFFFFFFFu;
-            int32_t modVal = evalPhaseWave(waveB, pB, pw);
+            uint32_t pB_fb = fbAmt ? (pB + (static_cast<uint32_t>(lastMod * fbAmt) << 8)) : pB;
+            int32_t modVal = evalPhaseWave(waveB, pB_fb, pwB);
+            lastMod = modVal;
             uint32_t modPhase = pA + (static_cast<uint32_t>(modVal * fmDepth) << 5);
             int32_t carVal = evalPhaseWave(waveA, modPhase, pw);
             int32_t acc = carVal * 4096;
@@ -452,6 +490,7 @@ class Oscillator
         } while (--n);
         phase[0] = pA;
         phase[1] = pB;
+        lastFmMod = lastMod;
     }
 
     // -------------------------------------------------------------- mode: Ring
@@ -479,14 +518,14 @@ class Oscillator
     template <Wave A, Wave B>
     void renderRing(const BlockParams& bp, int16_t* out, int n)
     {
-        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase;
+        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase, pwB = bp.pwPhaseB;
         const int32_t gB = bp.gainB, gS = bp.gainSub, gN = bp.gainNoise;
         const int32_t invGB = 4096 - gB;
         uint32_t wrapA, wrapB;
         do
         {
             int32_t a = step<A>(0, incA, pw, wrapA);
-            int32_t b = step<B>(1, incB, pw, wrapB);
+            int32_t b = step<B>(1, incB, pwB, wrapB);
             int32_t ring = (a * b) >> 15;
             int32_t mixed = (a * invGB + ring * gB) >> 12;
             int32_t acc = mixed * 4096 + stepSub(wrapA) * gS;
@@ -507,11 +546,11 @@ class Oscillator
 
     void renderFold(uint8_t waveA, uint8_t waveB, const BlockParams& bp, int16_t* out, int n)
     {
-        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase;
+        const uint32_t incA = bp.incA, incB = bp.incB, pw = bp.pwPhase, pwB = bp.pwPhaseB;
         const int32_t gB = bp.gainB, gS = bp.gainSub, gN = bp.gainNoise;
         // PW drives fold intensity (1.0x .. 5.7x), Osc B Lvl adds cross-fold & symmetry bias.
         const int32_t foldQ8 = 256 + ((int32_t)(bp.fmPw - 25) * 12) + (gB >> 3);
-        const int32_t bias = gB << 1;
+        const int32_t bias = (gB << 1) + ((int32_t)bp.timbreBMod * 128);
         uint32_t pA = phase[0];
         uint32_t pB = phase[1];
         do
@@ -523,7 +562,7 @@ class Oscillator
             int32_t pre = ((carVal * foldQ8) >> 8) + bias;
             if (gB)
             {
-                int32_t bVal = evalPhaseWave(waveB, pB, pw);
+                int32_t bVal = evalPhaseWave(waveB, pB, pwB);
                 pre += (bVal * gB) >> 13;
             }
             int32_t folded = foldWave(pre);
@@ -536,16 +575,236 @@ class Oscillator
         phase[0] = pA;
         phase[1] = pB;
     }
+
+    // ------------------------------------------------------ mode: Casio CZ PD
+    struct CzParams
+    {
+        uint32_t bp;
+        uint32_t slope1;
+        uint32_t slope2;
+        uint32_t rQ12;
+        int32_t dcComp;
+    };
+
+    // -cos(2*pi*theta) = sin(2*pi*theta - pi/2) in [-32767, +32767]
+    static inline int32_t czNegCos(uint32_t theta)
+    {
+        return sinParabolic(theta - 0x40000000u);
+    }
+
+    static inline void prepareCzParams(uint8_t czWave, uint32_t inc, uint8_t dcw, CzParams& cz)
+    {
+        // Minimum breakpoint width (~1 sample in 2^20 phase units) avoids ultrasonic foldover
+        uint32_t minBp20 = (inc >> 12) + 1u;
+        if (minBp20 > 262144u)
+            minBp20 = 262144u;
+
+        cz.bp = 0;
+        cz.slope1 = 4096u;
+        cz.slope2 = 4096u;
+        cz.rQ12 = 4096u;
+        cz.dcComp = 0;
+
+        switch (czWave)
+        {
+            case kCzSquare:
+            {
+                uint32_t bp20 = 524288u - (uint32_t)dcw * 5000u;
+                if (bp20 < minBp20)
+                    bp20 = minBp20;
+                cz.bp = bp20 << 12;
+                cz.slope1 = 0x80000000u / bp20;
+                break;
+            }
+            case kCzPulse:
+            {
+                uint32_t width20 = 1048576u - (uint32_t)dcw * 9830u;
+                uint32_t minW20 = minBp20 << 1;
+                if (width20 < minW20)
+                    width20 = minW20;
+                if (width20 > 1048576u)
+                    width20 = 1048576u;
+                cz.bp = (width20 == 1048576u) ? 0xFFFFFFFFu : (width20 << 12);
+                cz.slope1 = (width20 == 1048576u) ? 4096u : (0xFFFFFFFFu / width20);
+                cz.dcComp = (int32_t)((1048576u - width20) >> 5);
+                break;
+            }
+            case kCzDblSine:
+            {
+                if (dcw == 0)
+                {
+                    cz.bp = 0;
+                    cz.slope1 = 0;
+                    cz.slope2 = 4096u;
+                }
+                else
+                {
+                    uint32_t bp20 = (uint32_t)dcw * 5242u;
+                    uint32_t minW20 = minBp20 << 1;
+                    if (bp20 < minW20)
+                        bp20 = minW20;
+                    if (bp20 > 524288u)
+                        bp20 = 524288u;
+                    cz.bp = bp20 << 12;
+                    cz.slope1 = 0xFFFFFFFFu / bp20;
+                    cz.slope2 = 0xFFFFFFFFu / (1048576u - bp20);
+                }
+                break;
+            }
+            case kCzSawPulse:
+            {
+                uint32_t bp20 = 524288u - (uint32_t)dcw * 5000u;
+                if (bp20 < minBp20)
+                    bp20 = minBp20;
+                cz.bp = bp20 << 12;
+                cz.slope1 = 0x80000000u / bp20;
+                cz.dcComp = (int32_t)((524288u - bp20) >> 5);
+                break;
+            }
+            case kCzResoSaw:
+            case kCzResoTri:
+            case kCzResoTrap:
+            {
+                // Sweep resonant harmonic ratio 1.0x .. 9.98x, capped below ~0.42 * fs
+                uint32_t rQ12 = 4096u + (uint32_t)dcw * 368u;
+                uint32_t maxRQ12 = 0x6B000000u / ((inc >> 12) | 1u);
+                if (maxRQ12 < 4096u)
+                    maxRQ12 = 4096u;
+                if (rQ12 > maxRQ12)
+                    rQ12 = maxRQ12;
+                cz.rQ12 = rQ12;
+                cz.dcComp = (czWave == kCzResoTrap) ? 24576 : 16384;
+                if (rQ12 < 8192u && czWave != kCzResoSaw)
+                {
+                    uint32_t extra = (czWave == kCzResoTri) ? 6640u : 3320u;
+                    cz.dcComp += (int32_t)(((8192u - rQ12) * extra) >> 12);
+                }
+                break;
+            }
+            default: // kCzSaw
+            {
+                uint32_t bp20 = 524288u - (uint32_t)dcw * 4997u;
+                if (bp20 < minBp20)
+                    bp20 = minBp20;
+                cz.bp = bp20 << 12;
+                cz.slope1 = 0x80000000u / bp20;
+                cz.slope2 = 0x80000000u / (1048576u - bp20);
+                break;
+            }
+        }
+    }
+
+    static inline int32_t evalCzWave(uint8_t czWave, uint32_t p, const CzParams& cz)
+    {
+        switch (czWave)
+        {
+            case kCzSquare:
+            {
+                uint32_t halfP = p & 0x7FFFFFFFu;
+                uint32_t theta = (halfP < cz.bp) ? ((halfP >> 12) * cz.slope1) : 0x80000000u;
+                if (p & 0x80000000u)
+                    theta += 0x80000000u;
+                return czNegCos(theta);
+            }
+            case kCzPulse:
+            {
+                uint32_t theta = (p <= cz.bp) ? ((p >> 12) * cz.slope1) : 0u;
+                return czNegCos(theta) + cz.dcComp;
+            }
+            case kCzDblSine:
+            {
+                uint32_t theta =
+                  (p < cz.bp) ? ((p >> 12) * cz.slope1) : (((p - cz.bp) >> 12) * cz.slope2);
+                return czNegCos(theta);
+            }
+            case kCzSawPulse:
+            {
+                uint32_t theta;
+                if (p < 0x80000000u)
+                    theta = (p < cz.bp) ? ((p >> 12) * cz.slope1) : 0x80000000u;
+                else
+                    theta = p;
+                return czNegCos(theta) - cz.dcComp;
+            }
+            case kCzResoSaw:
+            case kCzResoTri:
+            case kCzResoTrap:
+            {
+                uint32_t theta = static_cast<uint32_t>((static_cast<uint64_t>(p) * cz.rQ12) >> 12);
+                int32_t carrier = 32767 - sinParabolic(theta + 0x40000000u);
+                uint32_t w;
+                if (czWave == kCzResoSaw)
+                {
+                    w = 65535u - (p >> 16);
+                }
+                else if (czWave == kCzResoTri)
+                {
+                    uint32_t hp = p >> 15;
+                    w = (hp < 65536u) ? hp : (131071u - hp);
+                }
+                else
+                {
+                    w = (p < 0x80000000u) ? 65535u : ((0xFFFFFFFFu - p) >> 15);
+                }
+                return static_cast<int32_t>((static_cast<uint32_t>(carrier) * w) >> 16) - cz.dcComp;
+            }
+            default: // kCzSaw
+            {
+                uint32_t theta = (p < cz.bp)
+                                   ? ((p >> 12) * cz.slope1)
+                                   : (0x80000000u + (((p - cz.bp) >> 12) * cz.slope2));
+                return czNegCos(theta);
+            }
+        }
+    }
+
+    void renderPD(uint8_t waveA, uint8_t waveB, const BlockParams& bp, int16_t* out, int n)
+    {
+        const uint32_t incA = bp.incA, incB = bp.incB;
+        const int32_t gB = bp.gainB, gS = bp.gainSub, gN = bp.gainNoise;
+        const uint8_t dcw = (uint8_t)(bp.fmPw - 25);
+        int32_t dcwB = (int32_t)dcw + bp.timbreBMod;
+        if (dcwB < 0)
+            dcwB = 0;
+        else if (dcwB > kMaxPw)
+            dcwB = kMaxPw;
+
+        CzParams czA, czB;
+        prepareCzParams(waveA, incA, dcw, czA);
+        if (gB)
+            prepareCzParams(waveB, incB, (uint8_t)dcwB, czB);
+
+        uint32_t pA = phase[0];
+        uint32_t pB = phase[1];
+        do
+        {
+            pA += incA;
+            pB += incB;
+            uint32_t wrapA = (pA < incA) ? blepT(pA, incA) : 0xFFFFFFFFu;
+            int32_t acc = evalCzWave(waveA, pA, czA) * 4096;
+            if (gB)
+                acc += evalCzWave(waveB, pB, czB) * gB;
+            acc += stepSub(wrapA) * gS;
+            if (gN)
+                acc += nextNoise() * gN;
+            *out++ = (int16_t)sat16(acc >> 13);
+        } while (--n);
+        phase[0] = pA;
+        phase[1] = pB;
+    }
 };
 
-// Pitch-ratio helper: 2^(cents/1200) for cents in [-4800, 4800], float.
+// Pitch-ratio helper: 2^(cents/1200) for cents in [-7200, 7200], float.
 // Called only when parameters change (cached by the caller).
 static inline float centsToRatio(int32_t cents)
 {
-    // 2^(x) via exp2 split: integer octaves + polynomial for the fraction.
-    float x = (float)cents / 1200.0f;
-    int32_t oct = (int32_t)(x >= 0 ? x : x - 1.0f);
-    float f = x - (float)oct; // [0, 1)
+    if (cents < -7200)
+        cents = -7200;
+    else if (cents > 7200)
+        cents = 7200;
+    // 2^(x) via exp2 split: exact integer floor octaves + polynomial for fraction.
+    int32_t oct = (cents >= 0) ? (cents / 1200) : ((cents - 1199) / 1200);
+    float f = (float)(cents - oct * 1200) * (1.0f / 1200.0f); // [0, 1)
     // 2^f, minimax-ish cubic (max err ~1e-4, ~0.2 cents)
     float r = 1.0f + f * (0.6951786f + f * (0.2261649f + f * 0.0782818f));
     if (oct >= 0)
@@ -556,14 +815,15 @@ static inline float centsToRatio(int32_t cents)
 }
 
 // Builds per-block parameters. `incA` is Osc A's phase increment.
-// `pwMod` is an additive modulation of the pw parameter in UI units (-100..100).
+// `pwMod` / `timbreBMod` are additive modulations in UI units (-100..100).
 // ratioB / ratioC are cached pitch ratios (see centsToRatio).
 static inline void buildBlockParams(const Params& p,
                                     uint32_t incA,
                                     float ratioB,
                                     float ratioC,
                                     int32_t pwMod,
-                                    BlockParams& bp)
+                                    BlockParams& bp,
+                                    int32_t timbreBMod = 0)
 {
     constexpr uint32_t kMinInc = 1u << 17;
     constexpr uint32_t kMaxInc = 0x70000000u; // ~0.44 * fs
@@ -589,6 +849,18 @@ static inline void buildBlockParams(const Params& p,
         clampedPw = kMaxPw;
     bp.pwPhase = pwToPhase(clampedPw, p.mode);
     bp.fmPw = (uint8_t)(clampedPw + 25);
+    int32_t tMod = timbreBMod;
+    if (tMod < -100)
+        tMod = -100;
+    else if (tMod > 100)
+        tMod = 100;
+    bp.timbreBMod = (int16_t)tMod;
+    int32_t clampedPwB = (int32_t)p.pw + pwMod + tMod;
+    if (clampedPwB < 0)
+        clampedPwB = 0;
+    else if (clampedPwB > kMaxPw)
+        clampedPwB = kMaxPw;
+    bp.pwPhaseB = pwToPhase(clampedPwB, kModeClassic);
     // CSaw ramp from 32768 at pw to 65535 at the cycle end: k (Q16) = 32767 / span16 * 65536
     uint32_t span16 = (0xFFFFFFFFu - bp.pwPhase) >> 16;
     bp.csawK = span16 ? (32767u << 16) / span16 : 0;
@@ -599,7 +871,10 @@ static inline void buildBlockParams(const Params& p,
 }
 
 // Pitch ratios for Osc B / Osc C depending on mode.
-static inline void computeRatios(const Params& p, float& ratioB, float& ratioC)
+static inline void computeRatios(const Params& p,
+                                 float& ratioB,
+                                 float& ratioC,
+                                 int32_t extraCentsB = 0)
 {
     int32_t semi = p.semiB;
     if (semi < kMinSemi)
@@ -609,12 +884,12 @@ static inline void computeRatios(const Params& p, float& ratioB, float& ratioC)
     int32_t det = p.detune > kMaxDetune ? kMaxDetune : p.detune;
     if (p.mode == kModeSwarm)
     {
-        ratioB = centsToRatio(det / 2 * 0 + det);  // +spread
-        ratioC = centsToRatio(-det);               // -spread
+        ratioB = centsToRatio(det + extraCentsB);  // +spread
+        ratioC = centsToRatio(-det + extraCentsB); // -spread
     }
     else
     {
-        ratioB = centsToRatio(semi * 100 + det);
+        ratioB = centsToRatio(semi * 100 + det + extraCentsB);
         ratioC = 1.0f;
     }
 }

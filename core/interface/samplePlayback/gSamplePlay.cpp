@@ -841,9 +841,12 @@ void cSamplePlayback::showSynthValues()
     auto& sp = editorInstrument->synthParams();
 
     static const char* const kModeNames[] = {
-        "Classic", "Sync", "CSaw", "Swarm", "FM", "Ring", "Fold"
+        "Classic", "Sync", "CSaw", "Swarm", "FM", "Ring", "Fold", "CZ PD"
     };
     static const char* const kWaveNames[] = { "Saw", "Pulse", "Triangle" };
+    static const char* const kCzWaveNames[] = {
+        "Saw", "Square", "Pulse", "DblSine", "SawPls", "ResSaw", "ResTri", "ResTrp"
+    };
 
     display.setAddControlStyle(label[5], controlStyleSpecialFx2);
     display.setControlData(label[5], &labelDataMore);
@@ -864,10 +867,14 @@ void cSamplePlayback::showSynthValues()
         const char* mName = (sp.mode < synthosc::kModeCount) ? kModeNames[sp.mode] : "Unknown";
         snprintf(synthModeText, sizeof(synthModeText), "%s", mName);
 
-        const char* wAName = (sp.waveA < synthosc::kWaveCount) ? kWaveNames[sp.waveA] : "Unknown";
+        const char* const* waveNames =
+          (sp.mode == synthosc::kModePD) ? kCzWaveNames : kWaveNames;
+        const uint8_t waveCount = synthosc::maxWaveCount(sp.mode);
+
+        const char* wAName = (sp.waveA < waveCount) ? waveNames[sp.waveA] : "Unknown";
         snprintf(synthOscAText, sizeof(synthOscAText), "%s", wAName);
 
-        const char* wBName = (sp.waveB < synthosc::kWaveCount) ? kWaveNames[sp.waveB] : "Unknown";
+        const char* wBName = (sp.waveB < waveCount) ? waveNames[sp.waveB] : "Unknown";
         snprintf(synthOscBText, sizeof(synthOscBText), "%s", wBName);
 
         snprintf(synthDetuneText, sizeof(synthDetuneText), "%d", (int)sp.detune);
@@ -885,7 +892,7 @@ void cSamplePlayback::showSynthValues()
 
         display.setControlText(label[0], "Osc B Lvl");
         display.setControlText(label[1], "Semi B");
-        display.setControlText(label[2], "Pulse W");
+        display.setControlText(label[2], (sp.mode == synthosc::kModePD) ? "DCW" : "Pulse W");
         display.setControlText(label[3], "Sub Lvl");
         display.setControlText(label[4], "Noise");
         display.setControlText(label[5], "More");
