@@ -27,18 +27,17 @@ AUDIO_CORE_RAM void playerEngine::update()
     envelopeCondition[envCutoff] = (instr.filterEnable == 1);
     envelopeCondition[envPan] = true;
     envelopeCondition[envWtPos] =
-      (instr.sample.type == mtSampleTypeWavetable) ||
-      (instr.playMode == playModeWavetable) ||
-      ((instr.sample.type == mtSampleTypeWaveFile) &&
-       (instr.playMode == playModeGranular)) ||
+      (instr.sample.type == mtSampleTypeWavetable) || (instr.playMode == playModeWavetable) ||
+      ((instr.sample.type == mtSampleTypeWaveFile) && (instr.playMode == playModeGranular)) ||
       (instr.playMode == playModeSynth);
     envelopeCondition[envGranPos] =
-      ((instr.sample.type == mtSampleTypeWaveFile) &&
-       (instr.playMode == playModeGranular)) ||
-      (instr.playMode != playModeGranular &&
-       instr.modDestination != modDestOff);
+      ((instr.sample.type == mtSampleTypeWaveFile) && (instr.playMode == playModeGranular)) ||
+      (instr.playMode != playModeGranular && instr.modDestination != modDestOff);
     envelopeCondition[envFinetune] = true;
-    envelopeCondition[envMod2] = instr.isEnvEnabled(envMod2);
+    for (uint8_t slot = envMod2; slot < envEngineMax; slot++)
+    {
+        envelopeCondition[slot] = instr.isEnvEnabled(slot);
+    }
     //*******
     for (uint8_t i = envAmp; i < ACTIVE_ENVELOPES; i++)
     {
@@ -53,11 +52,10 @@ AUDIO_CORE_RAM void playerEngine::update()
         handleUpdateRefreshPanning();
         handleUpdateRefreshGranPos();
         handleUpdateRefreshWtPos();
+        handleUpdateRefreshTune();
         handleUpdateRefreshFinetune();
         //**********
-        handleUpdateRefreshLP1();
-        handleUpdateRefreshLP2();
-        handleUpdateRefreshTune();
+        handleUpdateRefreshLoopPoints();
         handleUpdateRefreshVolume();
         handleUpdateRefreshResonance();
         handleUpdateRefreshDelay();
@@ -145,6 +143,26 @@ inline void playerEngine::handleUpdateEnvelope(uint8_t type, bool enableConditio
         else
         {
             const auto& instr = mtProject.instrument[currentInstrument_idx];
+            auto applyTypeRefresh = [&]()
+            {
+                const bool isExtraMod =
+                  (type >= envMod2 && type < envEngineMax && instr.isExtraModAvailable());
+                const bool isPoolMod0 = (type == envMod && instr.playMode != playModeGranular);
+                if (type == envGranLen && instr.playMode == playModeGranular)
+                {
+                    refreshRegister |= GRANULAR_LEN_SEND_MASK;
+                }
+                else if (isPoolMod0 || isExtraMod)
+                {
+                    const uint8_t modIdx = isExtraMod ? (uint8_t)(type - envMod2 + 1) : 0;
+                    refreshRegister |= getDestRefreshMask(instr.getModDestination(modIdx));
+                }
+                else
+                {
+                    refreshRegister |= envTargetRefreshMask[type];
+                }
+            };
+
             if (instr.isEnvEnabled(type) || isPerfOrSeqModActive(type))
             {
                 bool isActiveEnvelope = ((envelopePtr[type]->isKeyPressed() == 1) ||
@@ -174,48 +192,41 @@ inline void playerEngine::handleUpdateEnvelope(uint8_t type, bool enableConditio
                 if (isActiveEnvelope)
                 {
                     currentEnvelopeModification[type] = envelopePtr[type]->getOut();
-                    const bool isAssignableMod =
-                      (type == envMod && instr.playMode != playModeGranular) ||
-                      (type == envMod2 && instr.isMod2Available());
-                    if (type == envGranLen && instr.playMode == playModeGranular)
-                    {
-                        refreshRegister |= GRANULAR_LEN_SEND_MASK;
-                    }
-                    else if (isAssignableMod)
-                    {
-                        const uint8_t modIdx = (type == envMod2) ? 1 : 0;
-                        const uint8_t modDest = instr.getModDestination(modIdx);
-                        if (instr.playMode == playModeSynth)
-                        {
-                            int16_t synthModVal = (int16_t)(currentEnvelopeModification[type] * 100.0f);
-                            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
-                            {
-                                if (modIdx == 1)
-                                    playMemPtr[channel]->setSynthMod2(synthModVal);
-                                else
-                                    playMemPtr[channel]->setSynthMod(synthModVal);
-                            }
-                        }
-                        switch (modDest)
-                        {
-                            case modDestResonance: refreshRegister |= RESONANCE_MASK; break;
-                            case modDestCutoff: refreshRegister |= CUTOFF_MASK; break;
-                            case modDestOverdrive: refreshRegister |= OVERDRIVE_MASK; break;
-                            case modDestBitDepth: refreshRegister |= BIT_DEPTH_MASK; break;
-                            case modDestDelaySend: refreshRegister |= DELAY_SEND_MASK; break;
-                            case modDestReverbSend: refreshRegister |= REVERB_SEND_MASK; break;
-                            case modDestPanning: refreshRegister |= PANNING_MASK; break;
-                            case modDestFinetune: refreshRegister |= FINETUNE_MASK; break;
-                            case modDestVolume: refreshRegister |= VOLUME_MASK; break;
-                            default: break;
-                        }
-                    }
-                    else
-                    {
-                        refreshRegister |= envTargetRefreshMask[type];
-                    }
+                    applyTypeRefresh();
+                }
+                else if (currentEnvelopeModification[type] != 0.0f)
+                {
+                    currentEnvelopeModification[type] = 0.0f;
+                    applyTypeRefresh();
                 }
             }
+            else if (currentEnvelopeModification[type] != 0.0f)
+            {
+                currentEnvelopeModification[type] = 0.0f;
+                envelopePtr[type]->stop();
+                applyTypeRefresh();
+            }
+        }
+    }
+    else if (type >= envPan && type < envEngineMax && currentEnvelopeModification[type] != 0.0f)
+    {
+        currentEnvelopeModification[type] = 0.0f;
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        const bool isExtraMod =
+          (type >= envMod2 && type < envEngineMax && instr.isExtraModAvailable());
+        const bool isPoolMod0 = (type == envMod && instr.playMode != playModeGranular);
+        if (type == envGranLen && instr.playMode == playModeGranular)
+        {
+            refreshRegister |= GRANULAR_LEN_SEND_MASK;
+        }
+        else if (isPoolMod0 || isExtraMod)
+        {
+            const uint8_t modIdx = isExtraMod ? (uint8_t)(type - envMod2 + 1) : 0;
+            refreshRegister |= getDestRefreshMask(instr.getModDestination(modIdx));
+        }
+        else
+        {
+            refreshRegister |= envTargetRefreshMask[type];
         }
     }
 }
@@ -246,21 +257,104 @@ inline void playerEngine::handleUpdateEndReleaseAction()
     }
 }
 
-inline void playerEngine::handleUpdateRefreshLP1()
+inline void playerEngine::handleUpdateRefreshLoopPoints()
 {
-    if (refreshRegister & LP1_MASK)
+    if (refreshRegister & (LP1_MASK | LP2_MASK))
     {
-        refreshRegister &= (~LP1_MASK);
-        modLP1(mtProject.instrument[currentInstrument_idx].loopPoint1);
+        refreshRegister &= (~(LP1_MASK | LP2_MASK));
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        int32_t minP = (int32_t)instr.startPoint;
+        int32_t maxP = (int32_t)instr.endPoint;
+        if (maxP < minP)
+            maxP = minP;
+        int32_t base1 = (int32_t)instr.loopPoint1;
+        int32_t base2 = (int32_t)instr.loopPoint2;
+        int32_t span = (base2 > base1) ? (base2 - base1) : 0;
+        if (span > (maxP - minP))
+            span = maxP - minP;
+
+        const float lpMod = getActiveModDelta(instr, modDestLoopPos);
+        const int32_t shift =
+          (lpMod != 0.0f) ? (int32_t)std::roundf(lpMod * (float)SAMPLE_POINT_POS_MAX) : 0;
+
+        int32_t newLp1 = base1 + shift;
+        if (newLp1 < minP)
+            newLp1 = minP;
+        if (newLp1 + span > maxP)
+            newLp1 = maxP - span;
+        if (newLp1 < minP)
+            newLp1 = minP;
+        int32_t newLp2 = newLp1 + span;
+        if (newLp2 > maxP)
+            newLp2 = maxP;
+
+        const uint16_t targetLp1 = (uint16_t)clamp<int>(newLp1, 0, (int)SAMPLE_POINT_POS_MAX);
+        const uint16_t targetLp2 = (uint16_t)clamp<int>(newLp2, 0, (int)SAMPLE_POINT_POS_MAX);
+
+        if (targetLp1 >= lastAppliedLp1)
+        {
+            modLP2(targetLp2);
+            modLP1(targetLp1);
+        }
+        else
+        {
+            modLP1(targetLp1);
+            modLP2(targetLp2);
+        }
+        lastAppliedLp1 = targetLp1;
     }
 }
-inline void playerEngine::handleUpdateRefreshLP2()
+inline int8_t playerEngine::computePitchModTuneAndRemCents(const strInstrument& instr,
+                                                            int16_t& outRemCents) const
 {
-    if (refreshRegister & LP2_MASK)
+    int8_t baseTune = 0;
+    if (trackControlParameter[(int)controlType::performanceMode][(int)parameterList::tune])
     {
-        refreshRegister &= (~LP2_MASK);
-        modLP2(mtProject.instrument[currentInstrument_idx].loopPoint2);
+        baseTune = currentPerformanceValues.tune;
     }
+    else if (trackControlParameter[(int)controlType::sequencerMode][(int)parameterList::tune] ||
+             trackControlParameter[(int)controlType::sequencerMode2][(int)parameterList::tune])
+    {
+        baseTune = currentSeqModValues.tune;
+    }
+    else
+    {
+        baseTune = instr.tune;
+    }
+
+    int16_t baseFine = 0;
+    if (trackControlParameter[(int)controlType::sequencerMode][(int)parameterList::fineTune] ||
+        trackControlParameter[(int)controlType::sequencerMode2][(int)parameterList::fineTune])
+    {
+        baseFine = currentSeqModValues.fineTune;
+    }
+    else
+    {
+        baseFine = instr.fineTune;
+    }
+
+    const float envFineOut =
+      (instr.isEnvEnabled(envFinetune) || isPerfOrSeqModActive(envFinetune))
+        ? currentEnvelopeModification[envFinetune]
+        : 0.0f;
+
+    const float totalCents =
+      (float)baseFine + (envFineOut * (float)MAX_INSTRUMENT_FINETUNE) +
+      (getActiveModDelta(instr, modDestFinetune) * (float)MAX_INSTRUMENT_FINETUNE) +
+      (getActiveModDelta(instr, modDestPitch) * 2400.0f);
+
+    const float scaled = (totalCents + 50.0f) * 0.01f;
+    int32_t semiShift = (int32_t)scaled;
+    if (scaled < (float)semiShift)
+    {
+        semiShift--;
+    }
+    const int32_t roundedCents = (int32_t)(totalCents + ((totalCents >= 0.0f) ? 0.5f : -0.5f));
+    outRemCents = (int16_t)clamp<int>(
+      (int)(roundedCents - (semiShift * 100)),
+      MIN_INSTRUMENT_FINETUNE,
+      MAX_INSTRUMENT_FINETUNE);
+    return (int8_t)clamp<int>((int)baseTune + (int)semiShift, -120, 120);
 }
 inline void playerEngine::handleUpdateRefreshFinetune()
 {
@@ -273,37 +367,26 @@ inline void playerEngine::handleUpdateRefreshFinetune()
             currentEnvelopeModification[envFinetune] = 0;
         }
 
-        int32_t localFinetuneMod =
-          currentEnvelopeModification[envFinetune] * MAX_INSTRUMENT_FINETUNE;
-        localFinetuneMod +=
-          getActiveModDelta(mtProject.instrument[currentInstrument_idx], modDestFinetune) *
-          MAX_INSTRUMENT_FINETUNE;
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        int16_t remCents = 0;
+        const int8_t localTune = computePitchModTuneAndRemCents(instr, remCents);
 
-        int16_t localFinetune = 0;
-
-        if (trackControlParameter[(int)controlType::sequencerMode][(int)parameterList::fineTune] ||
-            trackControlParameter[(int)controlType::sequencerMode2][(int)parameterList::fineTune])
+        if (localTune != lastAppliedTune)
         {
-            localFinetune = currentSeqModValues.fineTune;
+            modTune(localTune);
+            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
+            {
+                playMemPtr[channel]->setForcedTune(localTune);
+            }
+            lastAppliedTune = localTune;
         }
-        else
-        {
-            localFinetune = mtProject.instrument[currentInstrument_idx].fineTune;
-        }
-
-        if ((int)(localFinetune + localFinetuneMod) < MIN_INSTRUMENT_FINETUNE)
-            localFinetune = MIN_INSTRUMENT_FINETUNE;
-        else if ((int)(localFinetune + localFinetuneMod) >= MAX_INSTRUMENT_FINETUNE)
-            localFinetune = MAX_INSTRUMENT_FINETUNE;
-        else
-            localFinetune += localFinetuneMod;
 
         for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
         {
-            playMemPtr[channel]->setForcedFineTune(localFinetune);
+            playMemPtr[channel]->setForcedFineTune(remCents);
         }
 
-        modFineTune(localFinetune);
+        modFineTune((int8_t)remCents);
     }
 }
 inline void playerEngine::handleUpdateRefreshTune()
@@ -312,23 +395,9 @@ inline void playerEngine::handleUpdateRefreshTune()
     {
         refreshRegister &= (~TUNE_MASK);
 
-        int8_t localTune;
-        if (trackControlParameter[(int)controlType::performanceMode]
-                                 [(int)parameterList::tune])
-        {
-            localTune = currentPerformanceValues.tune;
-        }
-        else if (trackControlParameter[(int)controlType::sequencerMode]
-                                      [(int)parameterList::tune] ||
-                 trackControlParameter[(int)controlType::sequencerMode2]
-                                      [(int)parameterList::tune])
-        {
-            localTune = currentSeqModValues.tune;
-        }
-        else
-        {
-            localTune = mtProject.instrument[currentInstrument_idx].tune;
-        }
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        int16_t remCents = 0;
+        const int8_t localTune = computePitchModTuneAndRemCents(instr, remCents);
 
         modTune(localTune);
 
@@ -336,6 +405,8 @@ inline void playerEngine::handleUpdateRefreshTune()
         {
             playMemPtr[channel]->setForcedTune(localTune);
         }
+        lastAppliedTune = localTune;
+        refreshRegister |= FINETUNE_MASK;
     }
 }
 inline void playerEngine::handleUpdateRefreshVolume()
@@ -444,10 +515,13 @@ inline void playerEngine::handleUpdateRefreshResonance()
     if (refreshRegister & RESONANCE_MASK)
     {
         refreshRegister &= (~RESONANCE_MASK);
-        float res = mtProject.instrument[currentInstrument_idx].resonance +
-                    getActiveModDelta(mtProject.instrument[currentInstrument_idx], modDestResonance);
-        if (res < 0.0f) res = 0.0f;
-        else if (res > 1.0f) res = 1.0f;
+        float res =
+          mtProject.instrument[currentInstrument_idx].resonance +
+          getActiveModDelta(mtProject.instrument[currentInstrument_idx], modDestResonance);
+        if (res < 0.0f)
+            res = 0.0f;
+        else if (res > 1.0f)
+            res = 1.0f;
         modResonance(res);
     }
 }
@@ -616,7 +690,12 @@ inline void playerEngine::handleUpdateRefreshWtPos()
     if (refreshRegister & WT_POS_SEND_MASK)
     {
         refreshRegister &= (~WT_POS_SEND_MASK);
-        if ((!mtProject.instrument[currentInstrument_idx].isWtPosEnvEnabled()) &&
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        if (instr.playMode == playModeGranular)
+        {
+            return;
+        }
+        if ((!instr.isWtPosEnvEnabled()) &&
             (!trackControlParameter[(int)controlType::sequencerMode]
                                    [(int)parameterList::lfoWavetablePosition]) &&
             (!trackControlParameter[(int)controlType::sequencerMode2]
@@ -627,9 +706,9 @@ inline void playerEngine::handleUpdateRefreshWtPos()
             currentEnvelopeModification[envWtPos] = 0;
         }
 
-        int32_t localWtPosisionMod =
-          currentEnvelopeModification[envWtPos] *
-          mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber;
+        const int32_t localWtPosisionMod = (int32_t)std::roundf(
+          (currentEnvelopeModification[envWtPos] + getActiveModDelta(instr, modDestWtPos)) *
+          (float)instr.sample.wavetableWindowNumber);
         uint32_t localWtPos = 0;
 
         if (trackControlParameter[(int)controlType::performanceMode]
@@ -646,32 +725,53 @@ inline void playerEngine::handleUpdateRefreshWtPos()
         }
         else
         {
-            localWtPos = mtProject.instrument[currentInstrument_idx].wavetableCurrentWindow;
+            localWtPos = instr.wavetableCurrentWindow;
         }
 
-        if (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth)
+        if (instr.playMode == playModeSynth)
         {
-            int16_t pw = (int16_t)(currentEnvelopeModification[envWtPos] * 100.0f);
+            const int16_t pw = (int16_t)std::roundf(
+              (currentEnvelopeModification[envWtPos] + getActiveModDelta(instr, modDestPulseWidth)) *
+              100.0f);
+            const int16_t timbreB =
+              (int16_t)std::roundf(getActiveModDelta(instr, modDestTimbreB) * 100.0f);
+            const int16_t oscBPitchCents =
+              (int16_t)std::roundf(getActiveModDelta(instr, modDestOscBPitch) * 2400.0f);
+            const int16_t detune =
+              (int16_t)std::roundf(getActiveModDelta(instr, modDestDetune) * 100.0f);
+            const int16_t subLevel =
+              (int16_t)std::roundf(getActiveModDelta(instr, modDestSubLevel) * 100.0f);
+            const int16_t noiseLevel =
+              (int16_t)std::roundf(getActiveModDelta(instr, modDestNoiseLevel) * 100.0f);
+            const int16_t oscBLevel =
+              (int16_t)std::roundf(getActiveModDelta(instr, modDestOscBLevel) * 100.0f);
             for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
             {
                 playMemPtr[channel]->setSynthPwMod(pw);
+                playMemPtr[channel]->setSynthTimbreBMod(timbreB);
+                playMemPtr[channel]->setSynthOscBPitchModCents(oscBPitchCents);
+                playMemPtr[channel]->setSynthDetuneMod(detune);
+                playMemPtr[channel]->setSynthSubLevelMod(subLevel);
+                playMemPtr[channel]->setSynthNoiseLevelMod(noiseLevel);
+                playMemPtr[channel]->setSynthOscBLevelMod(oscBLevel);
             }
         }
         else
         {
+            const uint32_t maxWin =
+              (instr.sample.wavetableWindowNumber > 0) ? (instr.sample.wavetableWindowNumber - 1) : 0;
             if ((int)(localWtPos + localWtPosisionMod) < 0)
             {
                 localWtPos = 0;
             }
-            else if ((int)(localWtPos + localWtPosisionMod) >
-                     (int)(mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber -
-                           1))
+            else if ((int)(localWtPos + localWtPosisionMod) > (int)maxWin)
             {
-                localWtPos =
-                  mtProject.instrument[currentInstrument_idx].sample.wavetableWindowNumber - 1;
+                localWtPos = maxWin;
             }
             else
+            {
                 localWtPos += localWtPosisionMod;
+            }
 
             for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
             {
@@ -686,18 +786,25 @@ inline void playerEngine::handleUpdateRefreshGranPos()
     if (refreshRegister & GRANULAR_POS_SEND_MASK)
     {
         refreshRegister &= (~GRANULAR_POS_SEND_MASK);
-        if ((!mtProject.instrument[currentInstrument_idx].envelope[envGranPos].enable) &&
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        if (instr.playMode != playModeGranular)
+        {
+            return;
+        }
+        if ((!instr.envelope[envGranPos].enable) &&
             (!trackControlParameter[(int)controlType::sequencerMode]
                                    [(int)parameterList::lfoGranularPosition]) &&
             (!trackControlParameter[(int)controlType::sequencerMode2]
                                    [(int)parameterList::lfoGranularPosition]) &&
-            (!trackControlParameter[(int)controlType::sequencerMode2]
+            (!trackControlParameter[(int)controlType::performanceMode]
                                    [(int)parameterList::lfoGranularPosition]))
         {
             currentEnvelopeModification[envGranPos] = 0;
         }
 
-        int32_t localGranPosisionMod = currentEnvelopeModification[envGranPos] * MAX_16BIT;
+        int32_t localGranPosisionMod = (int32_t)std::roundf(
+          (currentEnvelopeModification[envGranPos] + getActiveModDelta(instr, modDestGranPos)) *
+          (float)MAX_16BIT);
 
         uint16_t localGranPosition = 0;
         if (trackControlParameter[(int)controlType::performanceMode]
@@ -714,8 +821,7 @@ inline void playerEngine::handleUpdateRefreshGranPos()
         }
         else
         {
-            localGranPosition =
-              mtProject.instrument[currentInstrument_idx].granular.currentPosition;
+            localGranPosition = instr.granular.currentPosition;
         }
 
         if ((int)(localGranPosition + localGranPosisionMod) < 0)
@@ -733,21 +839,26 @@ inline void playerEngine::handleUpdateRefreshGranLen()
     if (refreshRegister & GRANULAR_LEN_SEND_MASK)
     {
         refreshRegister &= (~GRANULAR_LEN_SEND_MASK);
-        if (!mtProject.instrument[currentInstrument_idx].isGranLenEnvEnabled())
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        if (instr.playMode != playModeGranular)
+        {
+            return;
+        }
+        if (!instr.isGranLenEnvEnabled())
         {
             currentEnvelopeModification[envGranLen] = 0;
         }
 
-        uint32_t sampleLen = mtProject.instrument[currentInstrument_idx].sample.length;
+        uint32_t sampleLen = instr.sample.length;
         int32_t maxGrainLen = (sampleLen > 0 && sampleLen < MAX_GRANULAR_LENGTH)
                                 ? static_cast<int32_t>(sampleLen)
                                 : static_cast<int32_t>(MAX_GRANULAR_LENGTH);
         if (maxGrainLen < MIN_GRANULAR_LENGTH)
             maxGrainLen = MIN_GRANULAR_LENGTH;
 
-        int32_t localGranLenMod =
-          static_cast<int32_t>(currentEnvelopeModification[envGranLen] *
-                               (maxGrainLen - MIN_GRANULAR_LENGTH));
+        int32_t localGranLenMod = static_cast<int32_t>(std::roundf(
+          (currentEnvelopeModification[envGranLen] + getActiveModDelta(instr, modDestGranLen)) *
+          (float)(maxGrainLen - MIN_GRANULAR_LENGTH)));
 
         int32_t localGranLength = 0;
         if (trackControlParameter[(int)controlType::sequencerMode]
@@ -759,12 +870,11 @@ inline void playerEngine::handleUpdateRefreshGranLen()
         }
         else
         {
-            localGranLength =
-              mtProject.instrument[currentInstrument_idx].granular.grainLength;
+            localGranLength = instr.granular.grainLength;
         }
 
-        localGranLength = clamp<int32_t>(
-          localGranLength + localGranLenMod, MIN_GRANULAR_LENGTH, maxGrainLen);
+        localGranLength =
+          clamp<int32_t>(localGranLength + localGranLenMod, MIN_GRANULAR_LENGTH, maxGrainLen);
 
         modGranularGrainLength(static_cast<uint16_t>(localGranLength));
     }
@@ -818,7 +928,8 @@ inline void playerEngine::handleUpdateRefreshAmpLFO()
                 {
                     setSyncParamsLFO(envAmp);
                 }
-                bool isRandom = (curAmpLoop == 1) &&
+                bool isRandom =
+                  (curAmpLoop == 1) &&
                   (mtProject.instrument[currentInstrument_idx].lfo[envAmp].shape == lfoShapeRandom);
 
                 for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
@@ -828,7 +939,8 @@ inline void playerEngine::handleUpdateRefreshAmpLFO()
             }
             else
             {
-                initEnvelopesParameters(envAmp, &mtProject.instrument[currentInstrument_idx].envelope[envAmp]);
+                initEnvelopesParameters(
+                  envAmp, &mtProject.instrument[currentInstrument_idx].envelope[envAmp]);
                 for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
                 {
                     playMemPtr[channel]->envelopeSetIsRandom(false);
@@ -853,7 +965,8 @@ inline void playerEngine::handleUpdateRefreshCutoffLFO()
                 (!trackControlParameter[(int)controlType::performanceMode]
                                        [(int)parameterList::lfoCutoff]))
             {
-                uint8_t curCutoffLoop = mtProject.instrument[currentInstrument_idx].envelope[envCutoff].loop;
+                uint8_t curCutoffLoop =
+                  mtProject.instrument[currentInstrument_idx].envelope[envCutoff].loop;
                 if (curCutoffLoop == 1 || curCutoffLoop == 3)
                 {
                     calcLfoBasedEnvelope(
@@ -868,7 +981,8 @@ inline void playerEngine::handleUpdateRefreshCutoffLFO()
                         setSyncParamsLFO(envCutoff);
                     }
 
-                    bool isRandom = (curCutoffLoop == 1) &&
+                    bool isRandom =
+                      (curCutoffLoop == 1) &&
                       (mtProject.instrument[currentInstrument_idx].lfo[envCutoff].shape ==
                        lfoShapeRandom);
                     envelopePtr[envCutoff]->setIsRandom(isRandom);
@@ -908,7 +1022,8 @@ inline void playerEngine::handleUpdateRefreshWtPosLFO()
                 (!trackControlParameter[(int)controlType::performanceMode]
                                        [(int)parameterList::lfoWavetablePosition]))
             {
-                uint8_t curWtLoop = mtProject.instrument[currentInstrument_idx].envelope[envWtPos].loop;
+                uint8_t curWtLoop =
+                  mtProject.instrument[currentInstrument_idx].envelope[envWtPos].loop;
                 if (curWtLoop == 1 || curWtLoop == 3)
                 {
                     calcLfoBasedEnvelope(
@@ -923,7 +1038,8 @@ inline void playerEngine::handleUpdateRefreshWtPosLFO()
                         setSyncParamsLFO(envWtPos);
                     }
 
-                    bool isRandom = (curWtLoop == 1) &&
+                    bool isRandom =
+                      (curWtLoop == 1) &&
                       (mtProject.instrument[currentInstrument_idx].lfo[envWtPos].shape ==
                        lfoShapeRandom);
                     envelopePtr[envWtPos]->setIsRandom(isRandom);
@@ -953,16 +1069,15 @@ inline void playerEngine::handleUpdateRefreshGranPosLFO()
     if (refreshRegister & LFO_GRAN_POS_SEND_MASK)
     {
         refreshRegister &= (~LFO_GRAN_POS_SEND_MASK);
+        auto& instr = mtProject.instrument[currentInstrument_idx];
         const bool isGranular =
-          (mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWaveFile) &&
-          (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular);
+          (instr.sample.type == mtSampleTypeWaveFile) && (instr.playMode == playModeGranular);
         const bool isModActive =
-          (mtProject.instrument[currentInstrument_idx].playMode != playModeGranular) &&
-          (mtProject.instrument[currentInstrument_idx].modDestination != modDestOff);
+          (instr.playMode != playModeGranular) && (instr.modDestination != modDestOff);
 
         if (isGranular || isModActive)
         {
-            if ((mtProject.instrument[currentInstrument_idx].isEnvEnabled(envGranPos)) &&
+            if ((instr.isEnvEnabled(envGranPos)) &&
                 (!trackControlParameter[(int)controlType::sequencerMode]
                                        [(int)parameterList::lfoGranularPosition]) &&
                 (!trackControlParameter[(int)controlType::sequencerMode2]
@@ -970,56 +1085,42 @@ inline void playerEngine::handleUpdateRefreshGranPosLFO()
                 (!trackControlParameter[(int)controlType::performanceMode]
                                        [(int)parameterList::lfoGranularPosition]))
             {
-                uint8_t curGranLoop = mtProject.instrument[currentInstrument_idx].envelope[envGranPos].loop;
+                uint8_t curGranLoop = instr.envelope[envGranPos].loop;
                 if (curGranLoop == 1 || curGranLoop == 3)
                 {
-                    calcLfoBasedEnvelope(
-                      &lfoBasedEnvelope[envGranPos],
-                      &mtProject.instrument[currentInstrument_idx].lfo[envGranPos],
-                      mtProject.instrument[currentInstrument_idx].lfo[envGranPos].speed,
-                      0,
-                      curGranLoop);
+                    calcLfoBasedEnvelope(&lfoBasedEnvelope[envGranPos],
+                                         &instr.lfo[envGranPos],
+                                         instr.lfo[envGranPos].speed,
+                                         0,
+                                         curGranLoop);
                     initEnvelopesParameters(envGranPos, &lfoBasedEnvelope[envGranPos]);
                     if (currentInstrument_idx == mtProject.values.lastUsedInstrument)
                     {
                         setSyncParamsLFO(envGranPos);
                     }
 
-                    bool isRandom = (curGranLoop == 1) &&
-                      (mtProject.instrument[currentInstrument_idx].lfo[envGranPos].shape ==
-                       lfoShapeRandom);
+                    bool isRandom =
+                      (curGranLoop == 1) && (instr.lfo[envGranPos].shape == lfoShapeRandom);
                     envelopePtr[envGranPos]->setIsRandom(isRandom);
                 }
                 else
                 {
-                    initEnvelopesParameters(
-                      envGranPos,
-                      &mtProject.instrument[currentInstrument_idx].envelope[envGranPos]);
+                    initEnvelopesParameters(envGranPos, &instr.envelope[envGranPos]);
                     envelopePtr[envGranPos]->setIsRandom(false);
                 }
             }
             else if (isModActive)
             {
                 currentEnvelopeModification[envGranPos] = 0;
-                for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
-                {
-                    playMemPtr[channel]->setSynthMod(0);
-                }
             }
         }
-        else if (mtProject.instrument[currentInstrument_idx].playMode != playModeGranular)
+        else if (instr.playMode != playModeGranular)
         {
             currentEnvelopeModification[envGranPos] = 0;
-            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
-            {
-                playMemPtr[channel]->setSynthMod(0);
-            }
         }
         if (!isGranular)
         {
-            refreshRegister |= VOLUME_MASK | PANNING_MASK | CUTOFF_MASK | RESONANCE_MASK |
-                               DELAY_SEND_MASK | REVERB_SEND_MASK | OVERDRIVE_MASK |
-                               BIT_DEPTH_MASK | FINETUNE_MASK;
+            refreshRegister |= kAllModRefreshMask;
         }
     }
 }
@@ -1029,47 +1130,43 @@ inline void playerEngine::handleUpdateRefreshMod2LFO()
     {
         refreshRegister &= (~LFO_MOD2_SEND_MASK);
         auto& instr = mtProject.instrument[currentInstrument_idx];
-        if (instr.isEnvEnabled(envMod2))
+        for (uint8_t envSlot = envMod2; envSlot < envEngineMax; envSlot++)
         {
-            const auto& envCfg = instr.getEnv(envMod2);
-            const auto& lfoCfg = instr.getLfo(envMod2);
-            uint8_t curLoop = envCfg.loop;
-            if (curLoop == 1 || curLoop == 3)
+            if (instr.isEnvEnabled(envSlot))
             {
-                calcLfoBasedEnvelope(&lfoBasedEnvelope[envMod2],
-                                     const_cast<strInstrument::strEnvBasedLfo*>(&lfoCfg),
-                                     lfoCfg.speed,
-                                     0,
-                                     curLoop);
-                initEnvelopesParameters(envMod2, &lfoBasedEnvelope[envMod2]);
-                if (currentInstrument_idx == mtProject.values.lastUsedInstrument)
+                const auto& envCfg = instr.getEnv(envSlot);
+                const auto& lfoCfg = instr.getLfo(envSlot);
+                uint8_t curLoop = envCfg.loop;
+                if (curLoop == 1 || curLoop == 3)
                 {
-                    setSyncParamsLFO(envMod2);
-                }
+                    calcLfoBasedEnvelope(&lfoBasedEnvelope[envSlot],
+                                         const_cast<strInstrument::strEnvBasedLfo*>(&lfoCfg),
+                                         lfoCfg.speed,
+                                         0,
+                                         curLoop);
+                    initEnvelopesParameters(envSlot, &lfoBasedEnvelope[envSlot]);
+                    if (currentInstrument_idx == mtProject.values.lastUsedInstrument)
+                    {
+                        setSyncParamsLFO(envSlot);
+                    }
 
-                bool isRandom = (curLoop == 1) && (lfoCfg.shape == lfoShapeRandom);
-                envelopePtr[envMod2]->setIsRandom(isRandom);
+                    bool isRandom = (curLoop == 1) && (lfoCfg.shape == lfoShapeRandom);
+                    envelopePtr[envSlot]->setIsRandom(isRandom);
+                }
+                else
+                {
+                    initEnvelopesParameters(envSlot, const_cast<envelopeGenerator::strEnv*>(&envCfg));
+                    envelopePtr[envSlot]->setIsRandom(false);
+                }
             }
             else
             {
-                initEnvelopesParameters(
-                  envMod2, const_cast<envelopeGenerator::strEnv*>(&envCfg));
-                envelopePtr[envMod2]->setIsRandom(false);
+                currentEnvelopeModification[envSlot] = 0;
+                envelopePtr[envSlot]->stop();
             }
         }
-        else
-        {
-            currentEnvelopeModification[envMod2] = 0;
-            envelopePtr[envMod2]->stop();
-            for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
-            {
-                playMemPtr[channel]->setSynthMod2(0);
-            }
-        }
-        // Refresh mod-targetable voice params so changing/disabling Mod 2 target clears stale delta
-        refreshRegister |= VOLUME_MASK | PANNING_MASK | CUTOFF_MASK | RESONANCE_MASK |
-                           DELAY_SEND_MASK | REVERB_SEND_MASK | OVERDRIVE_MASK |
-                           BIT_DEPTH_MASK | FINETUNE_MASK;
+        // Refresh all mod-targetable voice params so changing/disabling pooled modulators clears stale delta
+        refreshRegister |= kAllModRefreshMask;
     }
 }
 inline void playerEngine::handleUpdateRefreshPanningLFO()
@@ -1100,7 +1197,8 @@ inline void playerEngine::handleUpdateRefreshPanningLFO()
                     setSyncParamsLFO(envPan);
                 }
 
-                bool isRandom = (curPanLoop == 1) &&
+                bool isRandom =
+                  (curPanLoop == 1) &&
                   (mtProject.instrument[currentInstrument_idx].lfo[envPan].shape == lfoShapeRandom);
                 envelopePtr[envPan]->setIsRandom(isRandom);
             }
@@ -1128,7 +1226,8 @@ inline void playerEngine::handleUpdateRefreshFinetuneLFO()
             (!trackControlParameter[(int)controlType::performanceMode]
                                    [(int)parameterList::lfoFinetune]))
         {
-            uint8_t curFineLoop = mtProject.instrument[currentInstrument_idx].envelope[envFinetune].loop;
+            uint8_t curFineLoop =
+              mtProject.instrument[currentInstrument_idx].envelope[envFinetune].loop;
             if (curFineLoop == 1 || curFineLoop == 3)
             {
                 calcLfoBasedEnvelope(
@@ -1142,7 +1241,8 @@ inline void playerEngine::handleUpdateRefreshFinetuneLFO()
                 {
                     setSyncParamsLFO(envFinetune);
                 }
-                bool isRandom = (curFineLoop == 1) &&
+                bool isRandom =
+                  (curFineLoop == 1) &&
                   (mtProject.instrument[currentInstrument_idx].lfo[envFinetune].shape ==
                    lfoShapeRandom);
                 envelopePtr[envFinetune]->setIsRandom(isRandom);

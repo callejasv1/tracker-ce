@@ -348,14 +348,13 @@ class playerEngine
     uint8_t currentInstrument_idx;
 
     const uint32_t envTargetRefreshMask[envEngineMax] = {
-        0,
-        PANNING_MASK,
-        CUTOFF_MASK,
-        WT_POS_SEND_MASK,
-        GRANULAR_POS_SEND_MASK,
-        FINETUNE_MASK,
-        0
+        0, PANNING_MASK, CUTOFF_MASK, WT_POS_SEND_MASK, GRANULAR_POS_SEND_MASK, FINETUNE_MASK, 0,
+        0, 0
     };
+    static constexpr uint32_t kAllModRefreshMask =
+      VOLUME_MASK | PANNING_MASK | CUTOFF_MASK | RESONANCE_MASK | DELAY_SEND_MASK |
+      REVERB_SEND_MASK | OVERDRIVE_MASK | BIT_DEPTH_MASK | FINETUNE_MASK | TUNE_MASK |
+      WT_POS_SEND_MASK | GRANULAR_POS_SEND_MASK | GRANULAR_LEN_SEND_MASK | LP1_MASK | LP2_MASK;
     const uint8_t envelopesControlValue[envMax] = {
         (uint8_t)parameterList::lfoAmp,
         (uint8_t)parameterList::lfoPanning,
@@ -658,20 +657,54 @@ class playerEngine
                (trackControlParameter[(int)controlType::sequencerMode2][ctrl] != 0) ||
                (trackControlParameter[(int)controlType::performanceMode][ctrl] != 0);
     }
+    static constexpr uint32_t getDestRefreshMask(uint8_t dest)
+    {
+        switch (dest)
+        {
+            case modDestResonance: return RESONANCE_MASK;
+            case modDestCutoff: return CUTOFF_MASK;
+            case modDestOverdrive: return OVERDRIVE_MASK;
+            case modDestBitDepth: return BIT_DEPTH_MASK;
+            case modDestDelaySend: return DELAY_SEND_MASK;
+            case modDestReverbSend: return REVERB_SEND_MASK;
+            case modDestPanning: return PANNING_MASK;
+            case modDestFinetune: return FINETUNE_MASK;
+            case modDestVolume: return VOLUME_MASK;
+            case modDestPulseWidth:
+            case modDestDetune:
+            case modDestSubLevel:
+            case modDestNoiseLevel:
+            case modDestOscBLevel:
+            case modDestOscBPitch:
+            case modDestTimbreB:
+            case modDestWtPos: return WT_POS_SEND_MASK;
+            case modDestPitch: return TUNE_MASK | FINETUNE_MASK;
+            case modDestGranPos: return GRANULAR_POS_SEND_MASK;
+            case modDestGranLen: return GRANULAR_LEN_SEND_MASK;
+            case modDestLoopPos: return LP1_MASK | LP2_MASK;
+            default: return 0;
+        }
+    }
+
     inline float getActiveModDelta(const strInstrument& instr, uint8_t targetDest) const
     {
         float mod = 0.0f;
-        if (instr.playMode != playModeGranular &&
-            instr.getModDestination(0) == targetDest &&
-            instr.isEnvEnabled(envMod))
+        for (uint8_t i = 0; i < strInstrument::kDynamicPoolMax; i++)
         {
-            mod += currentEnvelopeModification[envMod];
+            if (!instr.isPoolSlotAvailable(i))
+            {
+                continue;
+            }
+            const uint8_t envSlot = strInstrument::poolIdxToEnvSlot(i);
+            if (instr.getModDestination(i) == targetDest && instr.isEnvEnabled(envSlot))
+            {
+                mod += currentEnvelopeModification[envSlot];
+            }
         }
-        if (instr.getModDestination(1) == targetDest &&
-            instr.isEnvEnabled(envMod2))
-        {
-            mod += currentEnvelopeModification[envMod2];
-        }
+        if (mod > 1.0f)
+            return 1.0f;
+        if (mod < -1.0f)
+            return -1.0f;
         return mod;
     }
 
@@ -706,8 +739,8 @@ class playerEngine
     inline void handleUpdateEndPlayDetect();
     inline void handleUpdateEnvelope(uint8_t type, bool enableCondition);
     inline void handleUpdateEndReleaseAction();
-    inline void handleUpdateRefreshLP1();
-    inline void handleUpdateRefreshLP2();
+    inline void handleUpdateRefreshLoopPoints();
+    inline int8_t computePitchModTuneAndRemCents(const strInstrument& instr, int16_t& outRemCents) const;
     inline void handleUpdateRefreshFinetune();
     inline void handleUpdateRefreshTune();
     inline void handleUpdateRefreshVolume();
@@ -861,6 +894,8 @@ class playerEngine
 
     float fmap(float x, float in_min, float in_max, float out_min, float out_max);
     int8_t stepVelocity = -1;
+    uint16_t lastAppliedLp1 = 0;
+    int8_t lastAppliedTune = 0;
 };
 
 extern audioEngine engine;

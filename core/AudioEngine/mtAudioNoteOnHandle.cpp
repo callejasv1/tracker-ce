@@ -26,6 +26,9 @@ uint8_t playerEngine ::noteOn(uint8_t instr_idx, int8_t note, int8_t _velocity)
     currentNote = note;
     stepVelocity = _velocity;
 
+    lastAppliedLp1 = mtProject.instrument[instr_idx].loopPoint1;
+    lastAppliedTune = mtProject.instrument[instr_idx].tune;
+
     handleInitNoteOnAllEnvelopes(); // kill + init
 
     handleNoteOnFilter();
@@ -39,6 +42,16 @@ uint8_t playerEngine ::noteOn(uint8_t instr_idx, int8_t note, int8_t _velocity)
     handleNoteOnReverbSend();
 
     handleNoteOnBitCrusher();
+
+    for (uint8_t i = 0; i < strInstrument::kDynamicPoolMax; i++)
+    {
+        if (mtProject.instrument[instr_idx].isPoolSlotAvailable(i) &&
+            mtProject.instrument[instr_idx].isEnvEnabled(strInstrument::poolIdxToEnvSlot(i)))
+        {
+            refreshRegister |=
+              getDestRefreshMask(mtProject.instrument[instr_idx].getModDestination(i));
+        }
+    }
 
     status = 1; // playMemPtr->play(instr_idx,note);
     if (isTrackDisplayed)
@@ -90,6 +103,9 @@ AUDIO_CORE_RAM uint8_t playerEngine ::noteOn(uint8_t instr_idx,
     currentInstrument_idx = instr_idx;
     currentNote = note;
     stepVelocity = velocity;
+
+    lastAppliedLp1 = mtProject.instrument[instr_idx].loopPoint1;
+    lastAppliedTune = mtProject.instrument[instr_idx].tune;
 
     handleInitFxNoteOnAllEnvelopes();
 
@@ -148,6 +164,16 @@ AUDIO_CORE_RAM uint8_t playerEngine ::noteOn(uint8_t instr_idx,
     seqFx(fx2_id, fx2_val, 1); // mniej wazny najpierw
     seqFx(fx1_id, fx1_val, 0);
 
+    for (uint8_t i = 0; i < strInstrument::kDynamicPoolMax; i++)
+    {
+        if (mtProject.instrument[instr_idx].isPoolSlotAvailable(i) &&
+            mtProject.instrument[instr_idx].isEnvEnabled(strInstrument::poolIdxToEnvSlot(i)))
+        {
+            refreshRegister |=
+              getDestRefreshMask(mtProject.instrument[instr_idx].getModDestination(i));
+        }
+    }
+
     bool isFx1Slide = (fx1_id == Sequencer::strFxConsts::FX_TYPE_SLIDE_UP) ||
                       (fx1_id == Sequencer::strFxConsts::FX_TYPE_SLIDE_DOWN);
     bool isFx2Slide = (fx2_id == Sequencer::strFxConsts::FX_TYPE_SLIDE_UP) ||
@@ -196,9 +222,10 @@ AUDIO_CORE_RAM uint8_t playerEngine ::noteOn(uint8_t instr_idx,
             const auto& lfoCfg = mtProject.instrument[instr_idx].getLfo(i);
             bool isRandom = (envCfg.loop == 1) && (lfoCfg.shape == lfoShapeRandom);
             envelopePtr[i]->setIsRandom(isRandom);
-            if (i != envCutoff ||
-                (!trackControlParameter[(int)controlType::sequencerMode][(int)parameterList::filterAttack] &&
-                 !trackControlParameter[(int)controlType::sequencerMode2][(int)parameterList::filterAttack]))
+            if (i != envCutoff || (!trackControlParameter[(int)controlType::sequencerMode]
+                                                         [(int)parameterList::filterAttack] &&
+                                   !trackControlParameter[(int)controlType::sequencerMode2]
+                                                         [(int)parameterList::filterAttack]))
             {
                 envelopePtr[i]->setWavetableParams(lfoCfg.shape, lfoCfg.wtBend, lfoCfg.wtSust);
             }
@@ -340,8 +367,7 @@ AUDIO_CORE_RAM void playerEngine::noteOffOrdinary()
     {
         if ((curAmpLoop == 0 &&
              mtProject.instrument[currentInstrument_idx].envelope[envAmp].release == 0.0f) ||
-            (envelopePassFlag) ||
-            (curAmpLoop == 1 || curAmpLoop == 3))
+            (envelopePassFlag) || (curAmpLoop == 1 || curAmpLoop == 3))
         {
             //			playMemPtr->stop();
             if (isTrackDisplayed)
@@ -373,29 +399,33 @@ AUDIO_CORE_RAM void playerEngine::handleInitNoteOnAllEnvelopes()
 
     handleInitNoteOnEnvelope(envAmp);
 
-    if (mtProject.instrument[currentInstrument_idx].filterEnable)
+    const auto& instr = mtProject.instrument[currentInstrument_idx];
+
+    if (instr.filterEnable)
     {
         handleInitNoteOnEnvelope(envCutoff);
     }
 
-    if ((mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable) ||
-        (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth))
+    if ((instr.playMode == playModeWavetable) || (instr.playMode == playModeSynth))
     {
         handleInitNoteOnEnvelope(envWtPos);
     }
 
-    if (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular)
+    if (instr.playMode == playModeGranular)
     {
         handleInitNoteOnEnvelope(envGranPos);
         handleInitNoteOnEnvelope(envGranLen);
     }
-    else if (mtProject.instrument[currentInstrument_idx].modDestination != modDestOff)
+    else if (instr.modDestination != modDestOff)
     {
         handleInitNoteOnEnvelope(envMod);
     }
-    if (mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod2))
+    for (uint8_t slot = envMod2; slot < envEngineMax; slot++)
     {
-        handleInitNoteOnEnvelope(envMod2);
+        if (instr.isEnvEnabled(slot))
+        {
+            handleInitNoteOnEnvelope(slot);
+        }
     }
     handleInitNoteOnEnvelope(envPan);
     handleInitNoteOnEnvelope(envFinetune);
@@ -578,20 +608,25 @@ void playerEngine::handleInitFxNoteOnEnvelope(uint8_t n)
             handleInitNoteOnEnvelope(n);
         }
 
-        if (n == envCutoff &&
-            (trackControlParameter[(int)controlType::sequencerMode][(int)parameterList::filterAttack] ||
-             trackControlParameter[(int)controlType::sequencerMode2][(int)parameterList::filterAttack]))
+        if (n == envCutoff && (trackControlParameter[(int)controlType::sequencerMode]
+                                                    [(int)parameterList::filterAttack] ||
+                               trackControlParameter[(int)controlType::sequencerMode2]
+                                                    [(int)parameterList::filterAttack]))
         {
-            uint8_t curFilterLoop = mtProject.instrument[currentInstrument_idx].envelope[envCutoff].loop;
+            uint8_t curFilterLoop =
+              mtProject.instrument[currentInstrument_idx].envelope[envCutoff].loop;
             if (curFilterLoop >= 2)
             {
                 envelopePtr[envCutoff]->setWavetableDurationMs(currentSeqModValues.filterAttack);
             }
             else
             {
-                envelopePtr[envCutoff]->putMidiParameter(0, 41, (currentSeqModValues.filterAttack / 1000) * 8);
-                envelopePtr[envCutoff]->putMidiParameter(0, 43, (currentSeqModValues.filterAttack / 1000) * 8);
-                envelopePtr[envCutoff]->putMidiParameter(0, 45, (currentSeqModValues.filterRelease / 1000) * 8);
+                envelopePtr[envCutoff]->putMidiParameter(
+                  0, 41, (currentSeqModValues.filterAttack / 1000) * 8);
+                envelopePtr[envCutoff]->putMidiParameter(
+                  0, 43, (currentSeqModValues.filterAttack / 1000) * 8);
+                envelopePtr[envCutoff]->putMidiParameter(
+                  0, 45, (currentSeqModValues.filterRelease / 1000) * 8);
             }
         }
 
@@ -640,7 +675,8 @@ void playerEngine::handleInitFxNoteOnAmpEnvelope()
         for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
         {
             playMemPtr[channel]->envelopeAttack(currentSeqModValues.ampAttack);
-            playMemPtr[channel]->envelopeDecay(curAmpLoop >= 2 ? currentSeqModValues.ampAttack : currentSeqModValues.ampRelease);
+            playMemPtr[channel]->envelopeDecay(curAmpLoop >= 2 ? currentSeqModValues.ampAttack
+                                                               : currentSeqModValues.ampRelease);
             playMemPtr[channel]->envelopeRelease(currentSeqModValues.ampRelease);
         }
     }
@@ -667,31 +703,34 @@ AUDIO_CORE_RAM void playerEngine::handleInitFxNoteOnAllEnvelopes()
 
     handleInitFxNoteOnEnvelope(envAmp);
 
-    if (mtProject.instrument[currentInstrument_idx].filterEnable)
+    const auto& instr = mtProject.instrument[currentInstrument_idx];
+
+    if (instr.filterEnable)
     {
         handleInitFxNoteOnEnvelope(envCutoff);
     }
 
-    if ((mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWavetable) ||
-        (mtProject.instrument[currentInstrument_idx].playMode == playModeWavetable) ||
-        (mtProject.instrument[currentInstrument_idx].playMode == playModeSynth))
+    if ((instr.sample.type == mtSampleTypeWavetable) || (instr.playMode == playModeWavetable) ||
+        (instr.playMode == playModeSynth))
     {
         handleInitFxNoteOnEnvelope(envWtPos);
     }
 
-    if ((mtProject.instrument[currentInstrument_idx].sample.type == mtSampleTypeWaveFile) &&
-        (mtProject.instrument[currentInstrument_idx].playMode == playModeGranular))
+    if ((instr.sample.type == mtSampleTypeWaveFile) && (instr.playMode == playModeGranular))
     {
         handleInitFxNoteOnEnvelope(envGranPos);
         handleInitFxNoteOnEnvelope(envGranLen);
     }
-    else if (mtProject.instrument[currentInstrument_idx].modDestination != modDestOff)
+    else if (instr.modDestination != modDestOff)
     {
         handleInitFxNoteOnEnvelope(envMod);
     }
-    if (mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod2))
+    for (uint8_t slot = envMod2; slot < envEngineMax; slot++)
     {
-        handleInitFxNoteOnEnvelope(envMod2);
+        if (instr.isEnvEnabled(slot))
+        {
+            handleInitFxNoteOnEnvelope(slot);
+        }
     }
     handleInitFxNoteOnEnvelope(envPan);
     handleInitFxNoteOnEnvelope(envFinetune);

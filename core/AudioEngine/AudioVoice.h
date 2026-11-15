@@ -14,6 +14,8 @@ class AudioVoice
         kPanning,
         kFinetune,
         kMod2,
+        kMod3,
+        kMod4,
         kEnvelopeGeneratorCount
     };
 

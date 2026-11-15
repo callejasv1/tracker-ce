@@ -72,6 +72,22 @@ void changeParamsCCF(int16_t value);
 
 static void onNoteKeyboardHide();
 
+static uint8_t getAutoLoopOrZero(const cInstrumentEditor* editor)
+{
+    if (!editor || !editor->editorInstrument)
+    {
+        return 0;
+    }
+    const enModDestination dest = editor->getCurrentAutoDest();
+    if (!editor->editorInstrument->isDestAutomationActive(dest))
+    {
+        return 0;
+    }
+    const int8_t envSlot = editor->getCurrentAutoEnvSlot();
+    return (envSlot >= 0) ? editor->editorInstrument->getEnv(static_cast<uint8_t>(envSlot)).loop
+                          : 0;
+}
+
 void cInstrumentEditor::update()
 {
     moduleRefresh = 0;
@@ -213,7 +229,8 @@ void cInstrumentEditor::start(uint32_t options)
     {
         case mtInstEditModeEnv:
         {
-            if ((!IE->editorInstrument->isAutomationDestEnabled(IE->selectedEnvelope)) &&
+            IE->rebuildVisibleAutoDests();
+            if ((!IE->editorInstrument->isDestAutomationActive(IE->getCurrentAutoDest())) &&
                 (IE->selectedPlace[IE->mode] > 1))
             {
                 IE->selectedPlace[IE->mode] = 1;
@@ -467,18 +484,11 @@ void cInstrumentEditor::changeParamValue(int value, ValueChangeSource source)
             case 5: cInstrumentEditor::changeFilterCutoff(value); break;
             case 6: cInstrumentEditor::changeFilterResonance(value); break;
 
-            case 10:
-                if ((IE->selectedEnvelope == autoDestMod || IE->selectedEnvelope == autoDestMod2) &&
-                    IE->buttons->isButtonPressed(interfaceButtonShift))
-                    cInstrumentEditor::changeModDestination(invert ? -value : value);
-                else
-                    cInstrumentEditor::changeSelectedEnv(invert ? -value : value);
-                break;
+            case 10: cInstrumentEditor::changeSelectedEnv(invert ? -value : value); break;
             case 11: cInstrumentEditor::changeSelectedEnvState(invert ? -value : value); break;
             case 12:
             {
-                const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-                const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+                const uint8_t curLoop = getAutoLoopOrZero(IE);
                 if (curLoop == 1)
                     cInstrumentEditor::changeSelectedLfoShape(invert ? -value : value);
                 else if (curLoop >= 2)
@@ -489,8 +499,7 @@ void cInstrumentEditor::changeParamValue(int value, ValueChangeSource source)
             }
             case 13:
             {
-                const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-                const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+                const uint8_t curLoop = getAutoLoopOrZero(IE);
                 if (curLoop == 1 || curLoop == 3)
                     cInstrumentEditor::changeSelectedLfoSpeed(invert ? -value : value);
                 else
@@ -499,8 +508,7 @@ void cInstrumentEditor::changeParamValue(int value, ValueChangeSource source)
             }
             case 14:
             {
-                const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-                const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+                const uint8_t curLoop = getAutoLoopOrZero(IE);
                 if (curLoop == 1)
                     cInstrumentEditor::changeSelectedLfoAmount(value);
                 else if (curLoop == 2)
@@ -513,8 +521,7 @@ void cInstrumentEditor::changeParamValue(int value, ValueChangeSource source)
             }
             case 15:
             {
-                const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-                const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+                const uint8_t curLoop = getAutoLoopOrZero(IE);
                 if (curLoop == 0)
                     cInstrumentEditor::changeSelectedEnvRelease(value);
                 else if (curLoop == 2)
@@ -525,8 +532,7 @@ void cInstrumentEditor::changeParamValue(int value, ValueChangeSource source)
             }
             case 16:
             {
-                const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-                const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+                const uint8_t curLoop = getAutoLoopOrZero(IE);
                 if (curLoop == 0 || curLoop == 2)
                     cInstrumentEditor::changeSelectedEnvAmount(value);
                 else if (curLoop == 3)
@@ -560,7 +566,8 @@ static void functSelectParams(uint8_t button, uint8_t state)
 
     if (IE->mode == mtInstEditModeEnv)
     {
-        const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
+        const enModDestination curDest = IE->getCurrentAutoDest();
+        const uint8_t curLoop = getAutoLoopOrZero(IE);
         if (state == buttonPress) // zmienianie pozycji listy przyciskiem pod ekranem
         {
             IE->rollListOver = true;
@@ -569,7 +576,6 @@ static void functSelectParams(uint8_t button, uint8_t state)
                 cInstrumentEditor::changeSelectedEnvState(1);
             if (button == 3 && IE->selectedPlace[IE->mode] == 2)
             {
-                const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
                 if (curLoop == 1)
                     cInstrumentEditor::changeSelectedLfoShape(1);
                 else if (curLoop >= 2)
@@ -577,7 +583,6 @@ static void functSelectParams(uint8_t button, uint8_t state)
             }
             if (button == 4 && IE->selectedPlace[IE->mode] == 3)
             {
-                const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
                 if (curLoop == 1 || curLoop == 3)
                     cInstrumentEditor::changeSelectedLfoSpeed(1);
             }
@@ -585,7 +590,7 @@ static void functSelectParams(uint8_t button, uint8_t state)
             IE->rollListOver = false;
         }
 
-        if ((button > 2) && (!IE->editorInstrument->isAutomationDestEnabled(IE->selectedEnvelope)))
+        if ((button > 2) && (!IE->editorInstrument->isDestAutomationActive(curDest)))
         {
             return;
         }
@@ -615,14 +620,12 @@ static void functSelectParams(uint8_t button, uint8_t state)
     if (state == buttonPress)
     {
         uint8_t lastSelectedPlace = IE->selectedPlace[IE->mode];
-        const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-        const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+        const uint8_t curLoop = getAutoLoopOrZero(IE);
 
         IE->selectedPlace[IE->mode] =
           (button > 0) && (IE->mode == mtInstEditModeEnv) ? button - 1 : button;
 
-        if ((IE->mode == mtInstEditModeEnv) && (IE->selectedPlace[IE->mode] > 4) &&
-            (curLoop == 1))
+        if ((IE->mode == mtInstEditModeEnv) && (IE->selectedPlace[IE->mode] > 4) && (curLoop == 1))
         {
             IE->selectedPlace[IE->mode] = 4;
         }
@@ -640,21 +643,13 @@ static void functSelectParams(uint8_t button, uint8_t state)
             case 10:
                 if (lastSelectedPlace == 0)
                 {
-                    if ((IE->selectedEnvelope == autoDestMod || IE->selectedEnvelope == autoDestMod2) &&
-                        IE->buttons->isButtonPressed(interfaceButtonShift))
-                        cInstrumentEditor::changeModDestination(-1);
-                    else
-                        cInstrumentEditor::changeSelectedEnv(-1);
+                    cInstrumentEditor::changeSelectedEnv(-1);
                 }
                 break;
             case 11:
                 if (lastSelectedPlace == 0)
                 {
-                    if ((IE->selectedEnvelope == autoDestMod || IE->selectedEnvelope == autoDestMod2) &&
-                        IE->buttons->isButtonPressed(interfaceButtonShift))
-                        cInstrumentEditor::changeModDestination(1);
-                    else
-                        cInstrumentEditor::changeSelectedEnv(1);
+                    cInstrumentEditor::changeSelectedEnv(1);
                 }
                 break;
             case 12: break;
@@ -737,12 +732,13 @@ static void functSelectParams(uint8_t button, uint8_t state)
 
                 if (IE->frameData.multiSelActiveNum == 0)
                 {
-                    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
                     IE->selectedPlace[IE->mode] =
                       (button > 0) && (IE->mode == mtInstEditModeEnv) ? button - 1 : button;
                     if ((IE->mode == mtInstEditModeEnv) && (IE->selectedPlace[IE->mode] > 4) &&
-                        (IE->editorInstrument->getEnv(envSlot).loop == 1))
+                        (getAutoLoopOrZero(IE) == 1))
+                    {
                         IE->selectedPlace[IE->mode] = 4;
+                    }
 
                     if ((!IE->editorInstrument->filterEnable) && ((button == 5) || (button == 6)) &&
                         (IE->mode == mtInstEditModeParams))
@@ -913,14 +909,13 @@ static void functRight()
 
     if (IE->mode == mtInstEditModeEnv)
     {
-        const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-        if ((!IE->editorInstrument->isAutomationDestEnabled(IE->selectedEnvelope)) &&
+        const enModDestination curDest = IE->getCurrentAutoDest();
+        if ((!IE->editorInstrument->isDestAutomationActive(curDest)) &&
             (IE->selectedPlace[IE->mode] > 1))
         {
             IE->selectedPlace[IE->mode] = 1;
         }
-        else if ((IE->selectedPlace[IE->mode] > 4) &&
-                 (IE->editorInstrument->getEnv(envSlot).loop == 1))
+        else if ((IE->selectedPlace[IE->mode] > 4) && (getAutoLoopOrZero(IE) == 1))
         {
             IE->selectedPlace[IE->mode] = 4;
         }
@@ -1087,17 +1082,20 @@ void cInstrumentEditor::changeSelectedEnv(int16_t value)
     }
 
     value = clamp<int>(value, -3, 3);
+    const int maxIdx = (IE->visibleAutoDestCount > 0) ? (int)IE->visibleAutoDestCount - 1 : 0;
 
-    if (IE->selectedEnvelope + value < 0)
+    if ((int)IE->selectedEnvelope + value < 0)
         IE->selectedEnvelope = 0;
-    else if (IE->selectedEnvelope + value > (autoDestCount - 1))
-        IE->selectedEnvelope = autoDestCount - 1;
+    else if ((int)IE->selectedEnvelope + value > maxIdx)
+        IE->selectedEnvelope = static_cast<uint8_t>(maxIdx);
     else
-        IE->selectedEnvelope += value;
+        IE->selectedEnvelope = static_cast<uint8_t>((int)IE->selectedEnvelope + value);
 
+    IE->poolFullNotice = false;
     IE->showInstrumentEnv();
 
     IE->showEnvList();
+    IE->activateLabelsBorder();
 }
 
 static void triggerEnvSlotRefresh(int envIdx)
@@ -1111,41 +1109,19 @@ static void triggerEnvSlotRefresh(int envIdx)
         case envGranPos: statusByte = LFO_GRAN_POS_SEND_MASK; break;
         case envPan: statusByte = LFO_PANNING_SEND_MASK; break;
         case envFinetune: statusByte = LFO_FINETUNE_SEND_MASK; break;
-        case envMod2: statusByte = LFO_MOD2_SEND_MASK; break;
+        case envMod2:
+        case envMod3:
+        case envMod4: statusByte = LFO_MOD2_SEND_MASK; break;
         default: break;
+    }
+    if (envIdx == envGranPos || envIdx >= envMod2)
+    {
+        statusByte |= playerEngine::kAllModRefreshMask;
     }
     for (int i = 0; i < 8; i++)
     {
         instrumentPlayer[i].setRefreshBit(statusByte);
     }
-}
-
-void cInstrumentEditor::changeModDestination(int16_t value)
-{
-    if (IE->isAnyNodeActive() || !IE->editorInstrument)
-    {
-        return;
-    }
-
-    const uint8_t modIdx = (IE->selectedEnvelope == autoDestMod2) ? 1 : 0;
-    if (modIdx == 1 && !IE->editorInstrument->isMod2Available())
-    {
-        return;
-    }
-
-    int newDest = (int)IE->editorInstrument->getModDestination(modIdx) + (value > 0 ? 1 : -1);
-    if (newDest < 0)
-        newDest = modDestCount - 1;
-    else if (newDest >= modDestCount)
-        newDest = 0;
-
-    IE->editorInstrument->setModDestination(modIdx, (uint8_t)newDest);
-    newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
-
-    triggerEnvSlotRefresh(modIdx == 1 ? envMod2 : envGranPos);
-
-    IE->showInstrumentEnv();
-    IE->showEnvList();
 }
 
 void cInstrumentEditor::changeSelectedEnvState(int16_t value)
@@ -1155,82 +1131,107 @@ void cInstrumentEditor::changeSelectedEnvState(int16_t value)
         return;
     }
 
-    IE->changeEnvState(IE->selectedEnvelope, value);
+    IE->changeEnvState(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedEnvAttack(int16_t value)
 {
-    IE->changeEnvAttack(IE->selectedEnvelope, value);
+    IE->changeEnvAttack(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedEnvDecay(int16_t value)
 {
-    IE->changeEnvDecay(IE->selectedEnvelope, value);
+    IE->changeEnvDecay(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedEnvSustain(int16_t value)
 {
-    IE->changeEnvSustain(IE->selectedEnvelope, value);
+    IE->changeEnvSustain(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedEnvRelease(int16_t value)
 {
-    IE->changeEnvRelease(IE->selectedEnvelope, value);
+    IE->changeEnvRelease(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedEnvAmount(int16_t value)
 {
-    IE->changeEnvAmount(IE->selectedEnvelope, value);
+    IE->changeEnvAmount(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedLfoShape(int16_t value)
 {
-    IE->changeLfoShape(IE->selectedEnvelope, value);
+    IE->changeLfoShape(IE->getCurrentAutoDest(), value);
 }
 void cInstrumentEditor::changeSelectedLfoSpeed(int16_t value)
 {
-    IE->changeLfoSpeed(IE->selectedEnvelope, value);
+    IE->changeLfoSpeed(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedLfoAmount(int16_t value)
 {
-    IE->changeLfoAmount(IE->selectedEnvelope, value);
+    IE->changeLfoAmount(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedWtWave(int16_t value)
 {
-    IE->changeWtWave(IE->selectedEnvelope, value);
+    IE->changeWtWave(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedWtWarpXY(int16_t value)
 {
-    IE->changeWtWarpXY(IE->selectedEnvelope, value);
+    IE->changeWtWarpXY(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedWtWarpX(int16_t value)
 {
-    IE->changeWtWarpX(IE->selectedEnvelope, value);
+    IE->changeWtWarpX(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedWtWarpY(int16_t value)
 {
-    IE->changeWtWarpY(IE->selectedEnvelope, value);
+    IE->changeWtWarpY(IE->getCurrentAutoDest(), value);
 }
 
 void cInstrumentEditor::changeSelectedWtSustain(int16_t value)
 {
-    IE->changeWtSustain(IE->selectedEnvelope, value);
+    IE->changeWtSustain(IE->getCurrentAutoDest(), value);
+}
+
+static int8_t getActiveModSlot(int idx, enModDestination& outDest)
+{
+    if (!IE->editorInstrument || idx <= modDestOff || idx >= modDestCount)
+    {
+        return -1;
+    }
+    outDest = static_cast<enModDestination>(idx);
+    if (!IE->editorInstrument->isDestAutomationActive(outDest))
+    {
+        return -1;
+    }
+    const int8_t envIdx = IE->editorInstrument->findEnvSlotForDest(outDest);
+    if (envIdx < 0 || (envIdx >= envMax && !IE->editorInstrument->isExtraModAvailable()))
+    {
+        return -1;
+    }
+    return envIdx;
 }
 
 void cInstrumentEditor::changeEnvState(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    if (!IE->editorInstrument || idx <= modDestOff || idx >= modDestCount)
+    {
         return;
+    }
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    const uint8_t curLoop = IE->editorInstrument->getEnv(envIdx).loop;
+    const enModDestination dest = static_cast<enModDestination>(idx);
+    const int8_t curSlot = IE->editorInstrument->findEnvSlotForDest(dest);
+    const bool wasActive = IE->editorInstrument->isDestAutomationActive(dest);
+    const uint8_t curLoop =
+      (curSlot >= 0) ? IE->editorInstrument->getEnv(static_cast<uint8_t>(curSlot)).loop : 0;
+
     int listPosition = 0;
-    if (!IE->editorInstrument->isAutomationDestEnabled(idx))
+    if (!wasActive)
         listPosition = 0;
     else if (curLoop == 0)
         listPosition = 1;
@@ -1250,55 +1251,76 @@ void cInstrumentEditor::changeEnvState(int idx, int16_t value)
     else
         listPosition += value;
 
-    auto& env = IE->editorInstrument->mutEnv(envIdx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
-    switch (listPosition)
+    int8_t envIdx = curSlot;
+    if (listPosition == 0)
     {
-        case 0:
-            IE->editorInstrument->setAutomationDestEnabled(idx, false);
-            if (!IE->editorInstrument->isEnvEnabled(envIdx))
+        IE->editorInstrument->setDestAutomationEnabled(dest, false);
+        if (envIdx >= 0 && !IE->editorInstrument->isEnvEnabled(static_cast<uint8_t>(envIdx)))
+        {
+            IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx)).loop = 0;
+        }
+        IE->poolFullNotice = false;
+    }
+    else
+    {
+        envIdx = IE->editorInstrument->acquireEnvSlotForDest(dest);
+        if (envIdx < 0)
+        {
+            IE->poolFullNotice = true;
+            if (mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
+                (mode == mtInstrumentEditorMode::mtInstEditModeEnv))
             {
-                env.loop = 0;
+                IE->showInstrumentEnv();
             }
-            break;
-        case 1:
-            IE->editorInstrument->setAutomationDestEnabled(idx, true);
-            env.loop = 0;
-            break;
-        case 2:
-            IE->editorInstrument->setAutomationDestEnabled(idx, true);
-            env.loop = 1;
-            if (lfo.shape >= lfoShapeCount)
-                lfo.shape = 0;
-            {
-                uint8_t maxSpd = (envIdx == envAmp) ? CONSTRAIN_SPEED_AMP_ENVELOPE : CONSTRAIN_SPEED_OTHER_ENVELOPE;
-                if (lfo.speed > maxSpd)
-                    lfo.speed = 0;
-            }
-            break;
-        case 3:
-            IE->editorInstrument->setAutomationDestEnabled(idx, true);
-            env.loop = 2; // WT Env
-            if (env.decay == 0)
-                env.decay = 1000;
-            break;
-        case 4:
-            IE->editorInstrument->setAutomationDestEnabled(idx, true);
-            env.loop = 3; // WT LFO
-            {
-                uint8_t maxSpd = (envIdx == envAmp) ? CONSTRAIN_SPEED_AMP_ENVELOPE : CONSTRAIN_SPEED_OTHER_ENVELOPE;
-                if (lfo.speed > maxSpd)
-                    lfo.speed = 0;
-            }
-            break;
+            return;
+        }
+
+        IE->poolFullNotice = false;
+        IE->editorInstrument->setDestAutomationEnabled(dest, true);
+        auto& env = IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx));
+        auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
+        switch (listPosition)
+        {
+            case 1: env.loop = 0; break;
+            case 2:
+                env.loop = 1;
+                if (lfo.shape >= lfoShapeCount)
+                    lfo.shape = 0;
+                {
+                    uint8_t maxSpd = (envIdx == envAmp) ? CONSTRAIN_SPEED_AMP_ENVELOPE
+                                                        : CONSTRAIN_SPEED_OTHER_ENVELOPE;
+                    if (lfo.speed > maxSpd)
+                        lfo.speed = 0;
+                }
+                break;
+            case 3:
+                env.loop = 2; // WT Env
+                if (env.decay == 0)
+                    env.decay = 1000;
+                break;
+            case 4:
+                env.loop = 3; // WT LFO
+                {
+                    uint8_t maxSpd = (envIdx == envAmp) ? CONSTRAIN_SPEED_AMP_ENVELOPE
+                                                        : CONSTRAIN_SPEED_OTHER_ENVELOPE;
+                    if (lfo.speed > maxSpd)
+                        lfo.speed = 0;
+                }
+                break;
+            default: break;
+        }
     }
 
-    triggerEnvSlotRefresh(envIdx);
+    if (envIdx >= 0)
+    {
+        triggerEnvSlotRefresh(envIdx);
+    }
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+    IE->rebuildVisibleAutoDests();
 
     bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
+                          (dest == IE->getCurrentAutoDest()) &&
                           (mode == mtInstrumentEditorMode::mtInstEditModeEnv);
 
     if (isParamVisible)
@@ -1310,11 +1332,12 @@ void cInstrumentEditor::changeEnvState(int idx, int16_t value)
 
 void cInstrumentEditor::changeEnvAttack(int idx, int16_t value)
 {
-    const int envIdx = automationDestToEnvSlot(idx);
-    if (!IE->editorInstrument->isAutomationDestEnabled(idx))
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    auto& env = IE->editorInstrument->mutEnv(envIdx);
+    auto& env = IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx));
     uint16_t localCurrentValue =
       env.attack > ENVELOPE_MICRO_RANGE
         ? mapClamped<int>(env.attack,
@@ -1322,11 +1345,7 @@ void cInstrumentEditor::changeEnvAttack(int idx, int16_t value)
                           ATTACK_MAX,
                           ENVELOPE_MICRO_VAL,
                           ENVELOPE_MICRO_VAL + ((ATTACK_MAX - ENVELOPE_MICRO_RANGE) / 100))
-        : mapClamped<int>(env.attack,
-                          0,
-                          ENVELOPE_MICRO_RANGE,
-                          0,
-                          ENVELOPE_MICRO_VAL);
+        : mapClamped<int>(env.attack, 0, ENVELOPE_MICRO_RANGE, 0, ENVELOPE_MICRO_VAL);
 
     if (localCurrentValue + value >
         (ENVELOPE_MICRO_VAL + ((ATTACK_MAX - ENVELOPE_MICRO_RANGE) / 100)))
@@ -1348,9 +1367,8 @@ void cInstrumentEditor::changeEnvAttack(int idx, int16_t value)
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
     bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
-                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
-                          env.loop == 0;
+                          (dest == IE->getCurrentAutoDest()) &&
+                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) && env.loop == 0;
 
     if (isParamVisible)
         IE->showEnvAttack();
@@ -1358,11 +1376,12 @@ void cInstrumentEditor::changeEnvAttack(int idx, int16_t value)
 
 void cInstrumentEditor::changeEnvDecay(int idx, int16_t value)
 {
-    const int envIdx = automationDestToEnvSlot(idx);
-    if (!IE->editorInstrument->isAutomationDestEnabled(idx))
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    auto& env = IE->editorInstrument->mutEnv(envIdx);
+    auto& env = IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx));
     uint16_t localCurrentValue =
       env.decay > ENVELOPE_MICRO_RANGE
         ? mapClamped<int>(env.decay,
@@ -1370,11 +1389,7 @@ void cInstrumentEditor::changeEnvDecay(int idx, int16_t value)
                           DECAY_MAX,
                           ENVELOPE_MICRO_VAL,
                           ENVELOPE_MICRO_VAL + ((DECAY_MAX - ENVELOPE_MICRO_RANGE) / 100))
-        : mapClamped<int>(env.decay,
-                          0,
-                          ENVELOPE_MICRO_RANGE,
-                          0,
-                          ENVELOPE_MICRO_VAL);
+        : mapClamped<int>(env.decay, 0, ENVELOPE_MICRO_RANGE, 0, ENVELOPE_MICRO_VAL);
 
     if (localCurrentValue + value >
         (ENVELOPE_MICRO_VAL + ((DECAY_MAX - ENVELOPE_MICRO_RANGE) / 100)))
@@ -1397,10 +1412,9 @@ void cInstrumentEditor::changeEnvDecay(int idx, int16_t value)
 
     triggerEnvSlotRefresh(envIdx);
 
-    bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
-                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
-                          (env.loop == 0 || env.loop == 2);
+    bool isParamVisible =
+      mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
+      (mode == mtInstrumentEditorMode::mtInstEditModeEnv) && (env.loop == 0 || env.loop == 2);
 
     if (isParamVisible)
         IE->showEnvDecay();
@@ -1408,11 +1422,12 @@ void cInstrumentEditor::changeEnvDecay(int idx, int16_t value)
 
 void cInstrumentEditor::changeEnvSustain(int idx, int16_t value)
 {
-    const int envIdx = automationDestToEnvSlot(idx);
-    if (!IE->editorInstrument->isAutomationDestEnabled(idx))
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    auto& env = IE->editorInstrument->mutEnv(envIdx);
+    auto& env = IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx));
     float fVal = value * 0.01;
 
     if (env.sustain + fVal < 0)
@@ -1425,9 +1440,8 @@ void cInstrumentEditor::changeEnvSustain(int idx, int16_t value)
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
     bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
-                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
-                          env.loop == 0;
+                          (dest == IE->getCurrentAutoDest()) &&
+                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) && env.loop == 0;
 
     if (isParamVisible)
         IE->showEnvSustain();
@@ -1435,11 +1449,12 @@ void cInstrumentEditor::changeEnvSustain(int idx, int16_t value)
 
 void cInstrumentEditor::changeEnvRelease(int idx, int16_t value)
 {
-    const int envIdx = automationDestToEnvSlot(idx);
-    if (!IE->editorInstrument->isAutomationDestEnabled(idx))
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    auto& env = IE->editorInstrument->mutEnv(envIdx);
+    auto& env = IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx));
     uint16_t localCurrentValue =
       env.release > ENVELOPE_MICRO_RANGE
         ? mapClamped<int>(env.release,
@@ -1447,11 +1462,7 @@ void cInstrumentEditor::changeEnvRelease(int idx, int16_t value)
                           RELEASE_MAX,
                           ENVELOPE_MICRO_VAL,
                           ENVELOPE_MICRO_VAL + ((RELEASE_MAX - ENVELOPE_MICRO_RANGE) / 100))
-        : mapClamped<int>(env.release,
-                          0,
-                          ENVELOPE_MICRO_RANGE,
-                          0,
-                          ENVELOPE_MICRO_VAL);
+        : mapClamped<int>(env.release, 0, ENVELOPE_MICRO_RANGE, 0, ENVELOPE_MICRO_VAL);
 
     if (localCurrentValue + value >
         (ENVELOPE_MICRO_VAL + ((RELEASE_MAX - ENVELOPE_MICRO_RANGE) / 100)))
@@ -1473,9 +1484,8 @@ void cInstrumentEditor::changeEnvRelease(int idx, int16_t value)
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
     bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
-                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
-                          env.loop == 0;
+                          (dest == IE->getCurrentAutoDest()) &&
+                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) && env.loop == 0;
 
     if (isParamVisible)
         IE->showEnvRelease();
@@ -1483,11 +1493,12 @@ void cInstrumentEditor::changeEnvRelease(int idx, int16_t value)
 
 void cInstrumentEditor::changeEnvAmount(int idx, int16_t value)
 {
-    const int envIdx = automationDestToEnvSlot(idx);
-    if (!IE->editorInstrument->isAutomationDestEnabled(idx))
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    auto& env = IE->editorInstrument->mutEnv(envIdx);
+    auto& env = IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx));
     float fVal = value * 0.01;
 
     if (env.amount + fVal < 0)
@@ -1499,10 +1510,9 @@ void cInstrumentEditor::changeEnvAmount(int idx, int16_t value)
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
-    bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
-                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
-                          (env.loop == 0 || env.loop == 2);
+    bool isParamVisible =
+      mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
+      (mode == mtInstrumentEditorMode::mtInstEditModeEnv) && (env.loop == 0 || env.loop == 2);
 
     if (isParamVisible)
         IE->showEnvAmount();
@@ -1510,11 +1520,12 @@ void cInstrumentEditor::changeEnvAmount(int idx, int16_t value)
 
 void cInstrumentEditor::changeLfoShape(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
+    auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
     if (lfo.shape + value < 0)
         lfo.shape = 0;
     else if (lfo.shape + value > (lfoShapeCount - 1))
@@ -1528,10 +1539,10 @@ void cInstrumentEditor::changeLfoShape(int idx, int16_t value)
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
-    bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
-                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
-                          IE->editorInstrument->getEnv(envIdx).loop == 1;
+    bool isParamVisible =
+      mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
+      (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
+      IE->editorInstrument->getEnv(static_cast<uint8_t>(envIdx)).loop == 1;
 
     if (isParamVisible)
         IE->showLfoShape();
@@ -1539,12 +1550,13 @@ void cInstrumentEditor::changeLfoShape(int idx, int16_t value)
 
 void cInstrumentEditor::changeLfoSpeed(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
-    const uint8_t curLoop = IE->editorInstrument->getEnv(envIdx).loop;
+    auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
+    const uint8_t curLoop = IE->editorInstrument->getEnv(static_cast<uint8_t>(envIdx)).loop;
     uint8_t speedConstrain =
       envIdx == envAmp ? CONSTRAIN_SPEED_AMP_ENVELOPE : CONSTRAIN_SPEED_OTHER_ENVELOPE;
 
@@ -1567,10 +1579,9 @@ void cInstrumentEditor::changeLfoSpeed(int idx, int16_t value)
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
-    bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
-                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
-                          (curLoop == 1 || curLoop == 3);
+    bool isParamVisible =
+      mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
+      (mode == mtInstrumentEditorMode::mtInstEditModeEnv) && (curLoop == 1 || curLoop == 3);
 
     if (isParamVisible)
         IE->showLfoSpeed();
@@ -1578,12 +1589,13 @@ void cInstrumentEditor::changeLfoSpeed(int idx, int16_t value)
 
 void cInstrumentEditor::changeLfoAmount(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
-    auto& env = IE->editorInstrument->mutEnv(envIdx);
+    auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
+    auto& env = IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx));
     float fVal = value * 0.01;
 
     if (lfo.amount + fVal < 0)
@@ -1602,35 +1614,32 @@ void cInstrumentEditor::changeLfoAmount(int idx, int16_t value)
 
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
-    bool isParamVisible = mtInterface.isInstrumentParamsScreenActive() &&
-                          (idx == IE->selectedEnvelope) &&
-                          (mode == mtInstrumentEditorMode::mtInstEditModeEnv) &&
-                          (env.loop == 1 || env.loop == 3);
+    bool isParamVisible =
+      mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
+      (mode == mtInstrumentEditorMode::mtInstEditModeEnv) && (env.loop == 1 || env.loop == 3);
 
     if (isParamVisible)
         IE->showLfoAmount();
 }
 
-static void triggerEnvelopeRefresh(int idx)
-{
-    triggerEnvSlotRefresh(automationDestToEnvSlot(idx));
-}
-
 void cInstrumentEditor::changeWtWave(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
+    auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
     int val = (int)lfo.shape + value;
-    if (val < 0) val = IE->rollListOver ? 255 : 0;
-    else if (val > 255) val = IE->rollListOver ? 0 : 255;
+    if (val < 0)
+        val = IE->rollListOver ? 255 : 0;
+    else if (val > 255)
+        val = IE->rollListOver ? 0 : 255;
     lfo.shape = (uint8_t)val;
 
-    triggerEnvelopeRefresh(idx);
+    triggerEnvSlotRefresh(envIdx);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
-    if (mtInterface.isInstrumentParamsScreenActive() && (idx == IE->selectedEnvelope) &&
+    if (mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
         (mode == mtInstrumentEditorMode::mtInstEditModeEnv))
     {
         IE->showWtEnvWave();
@@ -1639,16 +1648,18 @@ void cInstrumentEditor::changeWtWave(int idx, int16_t value)
 
 void cInstrumentEditor::changeWtWarpXY(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
+    auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
     int8_t wx = unpackWarpX(lfo.wtBend);
     int8_t wy = unpackWarpY(lfo.wtBend);
 
 #ifdef TRACKER_MINI
-    bool adjustY = IE->buttons->isButtonPressed(interfaceButtonShift) || (value >= 10 || value <= -10);
+    bool adjustY =
+      IE->buttons->isButtonPressed(interfaceButtonShift) || (value >= 10 || value <= -10);
     int16_t deltaY = (value >= 10) ? 1 : ((value <= -10) ? -1 : value);
 #else
     bool adjustY = IE->buttons->isButtonPressed(interfaceButtonShift);
@@ -1658,20 +1669,26 @@ void cInstrumentEditor::changeWtWarpXY(int idx, int16_t value)
     if (adjustY)
     {
         int yVal = wy + deltaY;
-        if (yVal < -7) yVal = -7; else if (yVal > 7) yVal = 7;
+        if (yVal < -7)
+            yVal = -7;
+        else if (yVal > 7)
+            yVal = 7;
         wy = (int8_t)yVal;
     }
     else
     {
         int xVal = wx + value;
-        if (xVal < -7) xVal = -7; else if (xVal > 7) xVal = 7;
+        if (xVal < -7)
+            xVal = -7;
+        else if (xVal > 7)
+            xVal = 7;
         wx = (int8_t)xVal;
     }
 
     lfo.wtBend = packWarpXY(wx, wy);
-    triggerEnvelopeRefresh(idx);
+    triggerEnvSlotRefresh(envIdx);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
-    if (mtInterface.isInstrumentParamsScreenActive() && (idx == IE->selectedEnvelope) &&
+    if (mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
         (mode == mtInstrumentEditorMode::mtInstEditModeEnv))
     {
         IE->showWtWarpXY();
@@ -1680,21 +1697,25 @@ void cInstrumentEditor::changeWtWarpXY(int idx, int16_t value)
 
 void cInstrumentEditor::changeWtWarpX(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
+    auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
     int8_t wx = unpackWarpX(lfo.wtBend);
     int8_t wy = unpackWarpY(lfo.wtBend);
     int xVal = wx + value;
-    if (xVal < -7) xVal = -7; else if (xVal > 7) xVal = 7;
+    if (xVal < -7)
+        xVal = -7;
+    else if (xVal > 7)
+        xVal = 7;
     wx = (int8_t)xVal;
 
     lfo.wtBend = packWarpXY(wx, wy);
-    triggerEnvelopeRefresh(idx);
+    triggerEnvSlotRefresh(envIdx);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
-    if (mtInterface.isInstrumentParamsScreenActive() && (idx == IE->selectedEnvelope) &&
+    if (mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
         (mode == mtInstrumentEditorMode::mtInstEditModeEnv))
     {
         IE->showWtWarpX();
@@ -1703,21 +1724,25 @@ void cInstrumentEditor::changeWtWarpX(int idx, int16_t value)
 
 void cInstrumentEditor::changeWtWarpY(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
+    auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
     int8_t wx = unpackWarpX(lfo.wtBend);
     int8_t wy = unpackWarpY(lfo.wtBend);
     int yVal = wy + value;
-    if (yVal < -7) yVal = -7; else if (yVal > 7) yVal = 7;
+    if (yVal < -7)
+        yVal = -7;
+    else if (yVal > 7)
+        yVal = 7;
     wy = (int8_t)yVal;
 
     lfo.wtBend = packWarpXY(wx, wy);
-    triggerEnvelopeRefresh(idx);
+    triggerEnvSlotRefresh(envIdx);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
-    if (mtInterface.isInstrumentParamsScreenActive() && (idx == IE->selectedEnvelope) &&
+    if (mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
         (mode == mtInstrumentEditorMode::mtInstEditModeEnv))
     {
         IE->showWtWarpY();
@@ -1726,18 +1751,22 @@ void cInstrumentEditor::changeWtWarpY(int idx, int16_t value)
 
 void cInstrumentEditor::changeWtSustain(int idx, int16_t value)
 {
-    if (idx == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envIdx = getActiveModSlot(idx, dest);
+    if (envIdx < 0)
         return;
 
-    const int envIdx = automationDestToEnvSlot(idx);
-    auto& lfo = IE->editorInstrument->mutLfo(envIdx);
+    auto& lfo = IE->editorInstrument->mutLfo(static_cast<uint8_t>(envIdx));
     int val = (int)lfo.wtSust + value;
-    if (val < 0) val = 0; else if (val > 99) val = 99;
+    if (val < 0)
+        val = 0;
+    else if (val > 99)
+        val = 99;
     lfo.wtSust = (uint8_t)val;
 
-    triggerEnvelopeRefresh(idx);
+    triggerEnvSlotRefresh(envIdx);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
-    if (mtInterface.isInstrumentParamsScreenActive() && (idx == IE->selectedEnvelope) &&
+    if (mtInterface.isInstrumentParamsScreenActive() && (dest == IE->getCurrentAutoDest()) &&
         (mode == mtInstrumentEditorMode::mtInstEditModeEnv))
     {
         IE->showWtSustain();
@@ -1746,28 +1775,30 @@ void cInstrumentEditor::changeWtSustain(int idx, int16_t value)
 
 void cInstrumentEditor::setDefaultWtWave()
 {
-    if (selectedEnvelope == autoDestMod2 && !editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    editorInstrument->mutLfo(envSlot).shape = 0;
-    triggerEnvelopeRefresh(selectedEnvelope);
+    editorInstrument->mutLfo(static_cast<uint8_t>(envSlot)).shape = 0;
+    triggerEnvSlotRefresh(envSlot);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showWtEnvWave();
 }
 
 void cInstrumentEditor::setDefaultWtWarp()
 {
-    if (selectedEnvelope == autoDestMod2 && !editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    editorInstrument->mutLfo(envSlot).wtBend = 0;
-    triggerEnvelopeRefresh(selectedEnvelope);
+    editorInstrument->mutLfo(static_cast<uint8_t>(envSlot)).wtBend = 0;
+    triggerEnvSlotRefresh(envSlot);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
-    if (editorInstrument->getEnv(envSlot).loop == 2)
+    if (editorInstrument->getEnv(static_cast<uint8_t>(envSlot)).loop == 2)
         showWtWarpXY();
-    else if (editorInstrument->getEnv(envSlot).loop == 3)
+    else if (editorInstrument->getEnv(static_cast<uint8_t>(envSlot)).loop == 3)
     {
         showWtWarpX();
         showWtWarpY();
@@ -1776,12 +1807,13 @@ void cInstrumentEditor::setDefaultWtWarp()
 
 void cInstrumentEditor::setDefaultWtSustain()
 {
-    if (selectedEnvelope == autoDestMod2 && !editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    editorInstrument->mutLfo(envSlot).wtSust = 0;
-    triggerEnvelopeRefresh(selectedEnvelope);
+    editorInstrument->mutLfo(static_cast<uint8_t>(envSlot)).wtSust = 0;
+    triggerEnvSlotRefresh(envSlot);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     showWtSustain();
 }
@@ -2471,12 +2503,18 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
         case kGranularPositionAutomationType:
         case kFinetuneAutomationType:
         {
-            const int envIdx = automationDestToEnvSlot(automationIdx);
+            const enModDestination autoDest =
+              (automationIdx > 0) ? static_cast<enModDestination>(automationIdx) : modDestOff;
+            const int8_t envIdx = (IE->editorInstrument && autoDest != modDestOff)
+                                    ? IE->editorInstrument->findEnvSlotForDest(autoDest)
+                                    : -1;
+            const bool isActive =
+              (envIdx >= 0) && IE->editorInstrument->isDestAutomationActive(autoDest);
+            const uint8_t curLoop =
+              (envIdx >= 0) ? IE->editorInstrument->getEnv(static_cast<uint8_t>(envIdx)).loop : 0;
             uint8_t destValue = mapClamped<int>(cc_value, 0, 127, 0, 2);
 
-            return (int16_t)destValue -
-                   (int16_t)((IE->editorInstrument->isAutomationDestEnabled(automationIdx) ? 1 : 0) +
-                             IE->editorInstrument->envelope[envIdx].loop);
+            return (int16_t)destValue - (int16_t)((isActive ? 1 : 0) + curLoop);
         }
         case kVolumeAttack_ShapeLFO:
         case kPanningAttack_ShapeLFO:
@@ -2485,12 +2523,22 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
         case kGranularPositionAttack_ShapeLFO:
         case kFinetuneAttack_ShapeLFO:
         {
-            const int envIdx = automationDestToEnvSlot(automationIdx);
-            if (IE->editorInstrument->envelope[envIdx].loop)
+            const enModDestination autoDest =
+              (automationIdx > 0) ? static_cast<enModDestination>(automationIdx) : modDestOff;
+            const int8_t envIdx = (IE->editorInstrument && autoDest != modDestOff)
+                                    ? IE->editorInstrument->findEnvSlotForDest(autoDest)
+                                    : -1;
+            if (envIdx < 0)
+            {
+                return 0;
+            }
+            const auto& env = IE->editorInstrument->getEnv(static_cast<uint8_t>(envIdx));
+            const auto& lfo = IE->editorInstrument->getLfo(static_cast<uint8_t>(envIdx));
+            if (env.loop)
             {
                 uint8_t destValue = mapClamped<int>(cc_value, 0, 127, 0, lfoShapeCount - 1);
 
-                return (int16_t)destValue - (int16_t)IE->editorInstrument->lfo[envIdx].shape;
+                return (int16_t)destValue - (int16_t)lfo.shape;
             }
             else
             {
@@ -2505,18 +2553,15 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
                                         ((ATTACK_MAX - ENVELOPE_MICRO_RANGE) / 100))
                     : mapClamped<int>(cc_value, 0, kMicroRange, 0, ENVELOPE_MICRO_VAL);
                 uint16_t attack =
-                  IE->editorInstrument->envelope[envIdx].attack > ENVELOPE_MICRO_RANGE
-                    ? mapClamped<int>(IE->editorInstrument->envelope[envIdx].attack,
+                  env.attack > ENVELOPE_MICRO_RANGE
+                    ? mapClamped<int>(env.attack,
                                       ENVELOPE_MICRO_RANGE,
                                       ATTACK_MAX,
                                       ENVELOPE_MICRO_VAL,
                                       ENVELOPE_MICRO_VAL +
                                         ((ATTACK_MAX - ENVELOPE_MICRO_RANGE) / 100))
-                    : mapClamped<int>(IE->editorInstrument->envelope[envIdx].attack,
-                                      0,
-                                      ENVELOPE_MICRO_RANGE,
-                                      0,
-                                      ENVELOPE_MICRO_VAL);
+                    : mapClamped<int>(
+                        env.attack, 0, ENVELOPE_MICRO_RANGE, 0, ENVELOPE_MICRO_VAL);
 
                 return (int16_t)destValue - (int16_t)attack;
             }
@@ -2528,14 +2573,24 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
         case kGranularPositionDecay_SpeedLFO:
         case kFinetuneDecay_SpeedLFO:
         {
-            const int envIdx = automationDestToEnvSlot(automationIdx);
-            if (IE->editorInstrument->envelope[envIdx].loop)
+            const enModDestination autoDest =
+              (automationIdx > 0) ? static_cast<enModDestination>(automationIdx) : modDestOff;
+            const int8_t envIdx = (IE->editorInstrument && autoDest != modDestOff)
+                                    ? IE->editorInstrument->findEnvSlotForDest(autoDest)
+                                    : -1;
+            if (envIdx < 0)
             {
-                uint8_t speedConstrain = envIdx == envAmp ? CONSTRAIN_SPEED_AMP_ENVELOPE
-                                                          : CONSTRAIN_SPEED_OTHER_ENVELOPE;
+                return 0;
+            }
+            const auto& env = IE->editorInstrument->getEnv(static_cast<uint8_t>(envIdx));
+            const auto& lfo = IE->editorInstrument->getLfo(static_cast<uint8_t>(envIdx));
+            if (env.loop)
+            {
+                uint8_t speedConstrain =
+                  envIdx == envAmp ? CONSTRAIN_SPEED_AMP_ENVELOPE : CONSTRAIN_SPEED_OTHER_ENVELOPE;
                 uint8_t destValue = mapClamped<int>(cc_value, 0, 127, 0, speedConstrain);
 
-                return (int16_t)destValue - (int16_t)IE->editorInstrument->lfo[envIdx].speed;
+                return (int16_t)destValue - (int16_t)lfo.speed;
             }
             else
             {
@@ -2551,18 +2606,15 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
                     : mapClamped<int>(cc_value, 0, kMicroRange, 0, ENVELOPE_MICRO_VAL);
 
                 uint16_t decay =
-                  IE->editorInstrument->envelope[envIdx].decay > ENVELOPE_MICRO_RANGE
-                    ? mapClamped<int>(IE->editorInstrument->envelope[envIdx].decay,
+                  env.decay > ENVELOPE_MICRO_RANGE
+                    ? mapClamped<int>(env.decay,
                                       ENVELOPE_MICRO_RANGE,
                                       ATTACK_MAX,
                                       ENVELOPE_MICRO_VAL,
                                       ENVELOPE_MICRO_VAL +
                                         ((ATTACK_MAX - ENVELOPE_MICRO_RANGE) / 100))
-                    : mapClamped<int>(IE->editorInstrument->envelope[envIdx].decay,
-                                      0,
-                                      ENVELOPE_MICRO_RANGE,
-                                      0,
-                                      ENVELOPE_MICRO_VAL);
+                    : mapClamped<int>(
+                        env.decay, 0, ENVELOPE_MICRO_RANGE, 0, ENVELOPE_MICRO_VAL);
 
                 return (int16_t)destValue - (int16_t)decay;
             }
@@ -2574,11 +2626,19 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
         case kGranularPositionSustain:
         case kFinetuneSustain:
         {
-            const int envIdx = automationDestToEnvSlot(automationIdx);
+            const enModDestination autoDest =
+              (automationIdx > 0) ? static_cast<enModDestination>(automationIdx) : modDestOff;
+            const int8_t envIdx = (IE->editorInstrument && autoDest != modDestOff)
+                                    ? IE->editorInstrument->findEnvSlotForDest(autoDest)
+                                    : -1;
+            if (envIdx < 0)
+            {
+                return 0;
+            }
             float destValue = map((float)cc_value, 0.0f, 127.0f, 0.0f, SUSTAIN_MAX);
 
-            return (int16_t)(100.0f *
-                             (destValue - IE->editorInstrument->envelope[envIdx].sustain));
+            return (int16_t)(
+              100.0f * (destValue - IE->editorInstrument->getEnv(static_cast<uint8_t>(envIdx)).sustain));
         }
         case kVolumeRelease:
         case kPanningRelease:
@@ -2587,10 +2647,19 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
         case kGranularPositionRelease:
         case kFinetuneRelease:
         {
-            const int envIdx = automationDestToEnvSlot(automationIdx);
+            const enModDestination autoDest =
+              (automationIdx > 0) ? static_cast<enModDestination>(automationIdx) : modDestOff;
+            const int8_t envIdx = (IE->editorInstrument && autoDest != modDestOff)
+                                    ? IE->editorInstrument->findEnvSlotForDest(autoDest)
+                                    : -1;
+            if (envIdx < 0)
+            {
+                return 0;
+            }
+            const auto& env = IE->editorInstrument->getEnv(static_cast<uint8_t>(envIdx));
             constexpr int kMicroRange = 64;
             uint16_t destValue =
-               cc_value > kMicroRange
+              cc_value > kMicroRange
                 ? mapClamped<int>(cc_value,
                                   kMicroRange,
                                   127,
@@ -2598,17 +2667,13 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
                                   ENVELOPE_MICRO_VAL + ((ATTACK_MAX - ENVELOPE_MICRO_RANGE) / 100))
                 : mapClamped<int>(cc_value, 0, kMicroRange, 0, ENVELOPE_MICRO_VAL);
             uint16_t release =
-              IE->editorInstrument->envelope[envIdx].release > ENVELOPE_MICRO_RANGE
-                ? mapClamped<int>(IE->editorInstrument->envelope[envIdx].release,
+              env.release > ENVELOPE_MICRO_RANGE
+                ? mapClamped<int>(env.release,
                                   ENVELOPE_MICRO_RANGE,
                                   ATTACK_MAX,
                                   ENVELOPE_MICRO_VAL,
                                   ENVELOPE_MICRO_VAL + ((ATTACK_MAX - ENVELOPE_MICRO_RANGE) / 100))
-                : mapClamped<int>(IE->editorInstrument->envelope[envIdx].release,
-                                  0,
-                                  ENVELOPE_MICRO_RANGE,
-                                  0,
-                                  ENVELOPE_MICRO_VAL);
+                : mapClamped<int>(env.release, 0, ENVELOPE_MICRO_RANGE, 0, ENVELOPE_MICRO_VAL);
 
             return (int16_t)destValue - (int16_t)release;
         }
@@ -2619,10 +2684,18 @@ int16_t cInstrumentEditor::getControlChangeDelta(SampleInstrumentParamsCC param,
         case kGranularPositionAmount:
         case kFinetuneAmount:
         {
-            const int envIdx = automationDestToEnvSlot(automationIdx);
-            float amount = IE->editorInstrument->envelope[envIdx].loop
-                             ? IE->editorInstrument->lfo[envIdx].amount
-                             : IE->editorInstrument->envelope[envIdx].amount;
+            const enModDestination autoDest =
+              (automationIdx > 0) ? static_cast<enModDestination>(automationIdx) : modDestOff;
+            const int8_t envIdx = (IE->editorInstrument && autoDest != modDestOff)
+                                    ? IE->editorInstrument->findEnvSlotForDest(autoDest)
+                                    : -1;
+            if (envIdx < 0)
+            {
+                return 0;
+            }
+            const auto& env = IE->editorInstrument->getEnv(static_cast<uint8_t>(envIdx));
+            const auto& lfo = IE->editorInstrument->getLfo(static_cast<uint8_t>(envIdx));
+            float amount = env.loop ? lfo.amount : env.amount;
             float destValue = map((float)cc_value, 0.0f, 127.0f, 0.0f, AMOUNT_MAX);
 
             return (int16_t)(100.0f * (destValue - amount));
@@ -2661,7 +2734,13 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
         case kWavetablePositionAttack_ShapeLFO:
         case kGranularPositionAttack_ShapeLFO:
         case kFinetuneAttack_ShapeLFO:
-            if (IE->editorInstrument->envelope[automationDestToEnvSlot(automationIdx)].loop)
+        {
+            const int8_t slot =
+              (automationIdx > 0 && IE->editorInstrument)
+                ? IE->editorInstrument->findEnvSlotForDest(
+                    static_cast<enModDestination>(automationIdx))
+                : -1;
+            if (slot >= 0 && IE->editorInstrument->getEnv(static_cast<uint8_t>(slot)).loop)
             {
                 changeLfoShape(automationIdx, delta);
             }
@@ -2671,13 +2750,20 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
             }
 
             break;
+        }
         case kVolumeDecay_SpeedLFO:
         case kPanningDecay_SpeedLFO:
         case kCutoffDecay_SpeedLFO:
         case kWavetablePositionDecay_SpeedLFO:
         case kGranularPositionDecay_SpeedLFO:
         case kFinetuneDecay_SpeedLFO:
-            if (IE->editorInstrument->envelope[automationDestToEnvSlot(automationIdx)].loop)
+        {
+            const int8_t slot =
+              (automationIdx > 0 && IE->editorInstrument)
+                ? IE->editorInstrument->findEnvSlotForDest(
+                    static_cast<enModDestination>(automationIdx))
+                : -1;
+            if (slot >= 0 && IE->editorInstrument->getEnv(static_cast<uint8_t>(slot)).loop)
             {
                 changeLfoSpeed(automationIdx, delta);
             }
@@ -2686,6 +2772,7 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
                 changeEnvDecay(automationIdx, delta);
             }
             break;
+        }
         case kVolumeSustain:
         case kPanningSustain:
         case kCutoffSustain:
@@ -2704,7 +2791,13 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
         case kWavetablePositionAmount:
         case kGranularPositionAmount:
         case kFinetuneAmount:
-            if (IE->editorInstrument->envelope[automationDestToEnvSlot(automationIdx)].loop)
+        {
+            const int8_t slot =
+              (automationIdx > 0 && IE->editorInstrument)
+                ? IE->editorInstrument->findEnvSlotForDest(
+                    static_cast<enModDestination>(automationIdx))
+                : -1;
+            if (slot >= 0 && IE->editorInstrument->getEnv(static_cast<uint8_t>(slot)).loop)
             {
                 changeLfoAmount(automationIdx, delta);
             }
@@ -2713,6 +2806,7 @@ void cInstrumentEditor::changeControlChangeParam(SampleInstrumentParamsCC param,
                 changeEnvAmount(automationIdx, delta);
             }
             break;
+        }
         default: break;
     }
 }
@@ -2728,19 +2822,19 @@ int cInstrumentEditor::getEnvelopeIdx(SampleInstrumentParamsCC param)
         case kVolumeDecay_SpeedLFO:
         case kVolumeSustain:
         case kVolumeRelease:
-        case kVolumeAmount: return enAutomationDest::autoDestVolume;
+        case kVolumeAmount: return modDestVolume;
         case kPanningAutomationType:
         case kPanningAttack_ShapeLFO:
         case kPanningDecay_SpeedLFO:
         case kPanningSustain:
         case kPanningRelease:
-        case kPanningAmount: return enAutomationDest::autoDestPanning;
+        case kPanningAmount: return modDestPanning;
         case kCutoffAutomationType:
         case kCutoffAttack_ShapeLFO:
         case kCutoffDecay_SpeedLFO:
         case kCutoffSustain:
         case kCutoffRelease:
-        case kCutoffAmount: return enAutomationDest::autoDestCutoff;
+        case kCutoffAmount: return modDestCutoff;
         case kWavetablePositionAutomationType:
         case kWavetablePositionAttack_ShapeLFO:
         case kWavetablePositionDecay_SpeedLFO:
@@ -2748,20 +2842,20 @@ int cInstrumentEditor::getEnvelopeIdx(SampleInstrumentParamsCC param)
         case kWavetablePositionRelease:
         case kWavetablePositionAmount:
             return (IE->editorInstrument && IE->editorInstrument->playMode == playModeGranular)
-                     ? enAutomationDest::autoDestGranLen
-                     : enAutomationDest::autoDestWtPos;
+                     ? modDestGranLen
+                     : modDestWtPos;
         case kGranularPositionAutomationType:
         case kGranularPositionAttack_ShapeLFO:
         case kGranularPositionDecay_SpeedLFO:
         case kGranularPositionSustain:
         case kGranularPositionRelease:
-        case kGranularPositionAmount: return enAutomationDest::autoDestGranPos;
+        case kGranularPositionAmount: return modDestGranPos;
         case kFinetuneAutomationType:
         case kFinetuneAttack_ShapeLFO:
         case kFinetuneDecay_SpeedLFO:
         case kFinetuneSustain:
         case kFinetuneRelease:
-        case kFinetuneAmount: return enAutomationDest::autoDestFinetune;
+        case kFinetuneAmount: return modDestFinetune;
         default: return kNoEnvelope;
     }
 }
@@ -2819,9 +2913,10 @@ void cInstrumentEditor::lightUpPadBoard()
         {
             int synthIdx = instrumentIdxToSynthIdx(mtProject.values.lastUsedInstrument);
             const auto& synthTypes = getSynth()->getSynthTypes();
-            int synthType = std::clamp<int>(mtProject.values.synthPart[synthIdx].synthType,
-                                            0,
-                                            std::max<int>(0, static_cast<int>(synthTypes.size()) - 1));
+            int synthType =
+              std::clamp<int>(mtProject.values.synthPart[synthIdx].synthType,
+                              0,
+                              std::max<int>(0, static_cast<int>(synthTypes.size()) - 1));
 
             if (!synthTypes.empty() &&
                 synthTypes.at(synthType) == polysynth::InstrumentTypeId::kDrumSynth)
@@ -2870,10 +2965,10 @@ void cInstrumentEditor::lightUpPadBoard()
                 {
                     int synthIdx = instrumentIdxToSynthIdx(mtProject.values.lastUsedInstrument);
                     const auto& synthTypes = getSynth()->getSynthTypes();
-                    int synthType = std::clamp<int>(
-                      mtProject.values.synthPart[synthIdx].synthType,
-                      0,
-                      std::max<int>(0, static_cast<int>(synthTypes.size()) - 1));
+                    int synthType =
+                      std::clamp<int>(mtProject.values.synthPart[synthIdx].synthType,
+                                      0,
+                                      std::max<int>(0, static_cast<int>(synthTypes.size()) - 1));
 
                     if (!synthTypes.empty() &&
                         synthTypes.at(synthType) == polysynth::InstrumentTypeId::kDrumSynth)
@@ -3098,10 +3193,31 @@ void cInstrumentEditor::setDefaultValue(uint8_t place)
         case 5: setDefaultCutoff(); break;
         case 6: setDefaultResonance(); break;
         case 7: setDefaultDelaySend(); break;
+        case 11:
+        {
+            const enModDestination curDest = IE->getCurrentAutoDest();
+            if (IE->editorInstrument && IE->editorInstrument->isDestAutomationActive(curDest))
+            {
+                const int8_t envIdx = IE->editorInstrument->findEnvSlotForDest(curDest);
+                IE->editorInstrument->setDestAutomationEnabled(curDest, false);
+                if (envIdx >= 0 &&
+                    !IE->editorInstrument->isEnvEnabled(static_cast<uint8_t>(envIdx)))
+                {
+                    IE->editorInstrument->mutEnv(static_cast<uint8_t>(envIdx)).loop = 0;
+                }
+                if (envIdx >= 0)
+                {
+                    triggerEnvSlotRefresh(envIdx);
+                }
+                newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
+                IE->rebuildVisibleAutoDests();
+                IE->showInstrumentEnv();
+            }
+            break;
+        }
         case 12:
         {
-            const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-            const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+            const uint8_t curLoop = getAutoLoopOrZero(IE);
             if (curLoop == 1)
                 setDefaultLfoShape();
             else if (curLoop >= 2)
@@ -3112,8 +3228,7 @@ void cInstrumentEditor::setDefaultValue(uint8_t place)
         }
         case 13:
         {
-            const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-            const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+            const uint8_t curLoop = getAutoLoopOrZero(IE);
             if (curLoop == 1 || curLoop == 3)
                 setDefaultLfoSpeed();
             else
@@ -3122,8 +3237,7 @@ void cInstrumentEditor::setDefaultValue(uint8_t place)
         }
         case 14:
         {
-            const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-            const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+            const uint8_t curLoop = getAutoLoopOrZero(IE);
             if (curLoop == 1)
                 setDefaultLfoAmount();
             else if (curLoop >= 2)
@@ -3134,8 +3248,7 @@ void cInstrumentEditor::setDefaultValue(uint8_t place)
         }
         case 15:
         {
-            const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-            const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+            const uint8_t curLoop = getAutoLoopOrZero(IE);
             if (curLoop == 0)
                 setDefaultEnvRelease();
             else if (curLoop == 2)
@@ -3146,8 +3259,7 @@ void cInstrumentEditor::setDefaultValue(uint8_t place)
         }
         case 16:
         {
-            const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-            const uint8_t curLoop = IE->editorInstrument->getEnv(envSlot).loop;
+            const uint8_t curLoop = getAutoLoopOrZero(IE);
             if (curLoop == 0 || curLoop == 2)
                 setDefaultEnvAmount();
             else if (curLoop == 3)
@@ -3334,60 +3446,65 @@ void cInstrumentEditor::setDefaultBitDepth()
 // env screen
 void cInstrumentEditor::setDefaultEnvAttack()
 {
-    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-    if (!IE->editorInstrument->isAutomationDestEnabled(IE->selectedEnvelope))
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(IE->getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    IE->editorInstrument->mutEnv(envSlot).attack =
-      defaultInstrumentParams.getEnv(envSlot).attack;
+    IE->editorInstrument->mutEnv(static_cast<uint8_t>(envSlot)).attack =
+      defaultInstrumentParams.getEnv(static_cast<uint8_t>(envSlot)).attack;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     IE->showEnvAttack();
 }
 
 void cInstrumentEditor::setDefaultEnvDecay()
 {
-    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-    if (!IE->editorInstrument->isAutomationDestEnabled(IE->selectedEnvelope))
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(IE->getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    IE->editorInstrument->mutEnv(envSlot).decay =
-      defaultInstrumentParams.getEnv(envSlot).decay;
+    IE->editorInstrument->mutEnv(static_cast<uint8_t>(envSlot)).decay =
+      defaultInstrumentParams.getEnv(static_cast<uint8_t>(envSlot)).decay;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     IE->showEnvDecay();
 }
 
 void cInstrumentEditor::setDefaultEnvSustain()
 {
-    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-    if (!IE->editorInstrument->isAutomationDestEnabled(IE->selectedEnvelope))
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(IE->getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    IE->editorInstrument->mutEnv(envSlot).sustain =
-      defaultInstrumentParams.getEnv(envSlot).sustain;
+    IE->editorInstrument->mutEnv(static_cast<uint8_t>(envSlot)).sustain =
+      defaultInstrumentParams.getEnv(static_cast<uint8_t>(envSlot)).sustain;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     IE->showEnvSustain();
 }
 
 void cInstrumentEditor::setDefaultEnvRelease()
 {
-    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-    if (!IE->editorInstrument->isAutomationDestEnabled(IE->selectedEnvelope))
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(IE->getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    IE->editorInstrument->mutEnv(envSlot).release =
-      defaultInstrumentParams.getEnv(envSlot).release;
+    IE->editorInstrument->mutEnv(static_cast<uint8_t>(envSlot)).release =
+      defaultInstrumentParams.getEnv(static_cast<uint8_t>(envSlot)).release;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     IE->showEnvRelease();
 }
 
 void cInstrumentEditor::setDefaultEnvAmount()
 {
-    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-    if (!IE->editorInstrument->isAutomationDestEnabled(IE->selectedEnvelope))
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(IE->getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    IE->editorInstrument->mutEnv(envSlot).amount =
-      defaultInstrumentParams.getEnv(envSlot).amount;
+    IE->editorInstrument->mutEnv(static_cast<uint8_t>(envSlot)).amount =
+      defaultInstrumentParams.getEnv(static_cast<uint8_t>(envSlot)).amount;
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
 
     IE->showEnvAmount();
@@ -3395,12 +3512,13 @@ void cInstrumentEditor::setDefaultEnvAmount()
 
 void cInstrumentEditor::setDefaultLfoShape()
 {
-    if (IE->selectedEnvelope == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(IE->getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-    IE->editorInstrument->mutLfo(envSlot).shape =
-      defaultInstrumentParams.getLfo(envSlot).shape;
+    IE->editorInstrument->mutLfo(static_cast<uint8_t>(envSlot)).shape =
+      defaultInstrumentParams.getLfo(static_cast<uint8_t>(envSlot)).shape;
     triggerEnvSlotRefresh(envSlot);
     newFileManager.setInstrumentStructChanged(mtProject.values.lastUsedInstrument);
     IE->showLfoShape();
@@ -3408,12 +3526,13 @@ void cInstrumentEditor::setDefaultLfoShape()
 
 void cInstrumentEditor::setDefaultLfoSpeed()
 {
-    if (IE->selectedEnvelope == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(IE->getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-    IE->editorInstrument->mutLfo(envSlot).speed =
-      defaultInstrumentParams.getLfo(envSlot).speed;
+    IE->editorInstrument->mutLfo(static_cast<uint8_t>(envSlot)).speed =
+      defaultInstrumentParams.getLfo(static_cast<uint8_t>(envSlot)).speed;
 
     triggerEnvSlotRefresh(envSlot);
 
@@ -3424,12 +3543,13 @@ void cInstrumentEditor::setDefaultLfoSpeed()
 
 void cInstrumentEditor::setDefaultLfoAmount()
 {
-    if (IE->selectedEnvelope == autoDestMod2 && !IE->editorInstrument->isMod2Available())
+    enModDestination dest = modDestOff;
+    const int8_t envSlot = getActiveModSlot(IE->getCurrentAutoDest(), dest);
+    if (envSlot < 0)
         return;
 
-    const uint8_t envSlot = automationDestToEnvSlot(IE->selectedEnvelope);
-    IE->editorInstrument->mutLfo(envSlot).amount =
-      defaultInstrumentParams.getLfo(envSlot).amount;
+    IE->editorInstrument->mutLfo(static_cast<uint8_t>(envSlot)).amount =
+      defaultInstrumentParams.getLfo(static_cast<uint8_t>(envSlot)).amount;
 
     triggerEnvSlotRefresh(envSlot);
 

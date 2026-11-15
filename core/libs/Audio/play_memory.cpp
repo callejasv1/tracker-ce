@@ -890,12 +890,21 @@ void AudioPlayMemory::setGranularLoopMode(uint8_t type)
 
 void AudioPlayMemory::setTune(int8_t value, int8_t currentNote)
 {
+    if (currentPlayMode == playModeBeatSlice)
+        currentNote = 60;
+
     value += mtProject.instrument[currentInstrIdx].tuneResample;
 
     if ((currentNote + value) > (MAX_NOTE - 1))
         value = (MAX_NOTE - 1) - currentNote;
     if ((currentNote + value) < MIN_NOTE)
         value = MIN_NOTE - currentNote;
+
+    if (value == currentTune)
+    {
+        setFineTune(currentFineTune, currentNote);
+        return;
+    }
 
     uint8_t localPlaymode = mtProject.instrument[currentInstrIdx].playMode;
 

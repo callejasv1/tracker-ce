@@ -1705,6 +1705,10 @@ playerEngine::playerEngine()
       audioVoice.getEnvelopeGenerator(AudioVoice::EnvelopeGeneratorType::kFinetune);
     envelopePtr[envMod2] =
       audioVoice.getEnvelopeGenerator(AudioVoice::EnvelopeGeneratorType::kMod2);
+    envelopePtr[envMod3] =
+      audioVoice.getEnvelopeGenerator(AudioVoice::EnvelopeGeneratorType::kMod3);
+    envelopePtr[envMod4] =
+      audioVoice.getEnvelopeGenerator(AudioVoice::EnvelopeGeneratorType::kMod4);
 
     for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
     {

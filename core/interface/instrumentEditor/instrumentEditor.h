@@ -266,7 +266,15 @@ class cInstrumentEditor : public ModuleBase
 
     //----------------------------------
     // envelopes lists
+    static constexpr uint8_t kMaxVisibleAutoDests = 20;
+    enModDestination visibleAutoDests[kMaxVisibleAutoDests] = { modDestVolume };
+    uint8_t visibleAutoDestCount = 1;
     uint8_t selectedEnvelope = 0;
+    bool poolFullNotice = false;
+
+    void rebuildVisibleAutoDests();
+    enModDestination getCurrentAutoDest() const;
+    int8_t getCurrentAutoEnvSlot() const;
 
     void showInstrumentEnv();
 
@@ -287,7 +295,6 @@ class cInstrumentEditor : public ModuleBase
     void showWtSustain();
 
     static void changeSelectedEnv(int16_t value);
-    static void changeModDestination(int16_t value);
     static void changeSelectedEnvState(int16_t value);
     static void changeSelectedEnvAttack(int16_t value);
     static void changeSelectedEnvDecay(int16_t value);

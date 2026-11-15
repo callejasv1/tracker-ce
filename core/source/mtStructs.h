@@ -11,13 +11,13 @@
 //=====================================================================
 
 #ifndef FW_EDITION_NAME
-#define FW_EDITION_NAME "CE"
+#define FW_EDITION_NAME "CE_CZ"
 #endif
 #ifndef FW_VER_MAJOR
 #define FW_VER_MAJOR 1
 #endif
 #ifndef FW_VER_MINOR
-#define FW_VER_MINOR 0
+#define FW_VER_MINOR 1
 #endif
 #ifndef FW_VER_PATCH
 #define FW_VER_PATCH 0
@@ -426,17 +426,19 @@ enum envelopesType
     // playModeGranular are mutually exclusive, preserving the 372-byte strInstrument .pti layout.
     envGranLen = envWtPos,
     envGranPos,
-    // In non-granular / synth modes, slot 4 serves as the freely assignable Mod 1 Envelope/LFO
+    // In non-granular modes, slot 4 serves as pooled dynamic modulator 0 (envMod)
     envMod = envGranPos,
     envFinetune,
 
     envMax,
-    // Secondary freely assignable Mod 2 slot stored in strInstrument::slices overlay
+    // Additional pooled dynamic modulator slots stored in strInstrument::slices overlay
     envMod2 = envMax,
+    envMod3,
+    envMod4,
     envEngineMax
 };
 
-// Freely assignable modulation destinations
+// Automation & modulation destinations
 enum enModDestination : uint8_t
 {
     modDestOff = 0,
@@ -454,41 +456,15 @@ enum enModDestination : uint8_t
     modDestSubLevel,
     modDestNoiseLevel,
     modDestOscBLevel,
+    modDestPitch,
+    modDestOscBPitch,
+    modDestTimbreB,
+    modDestWtPos,
+    modDestGranPos,
+    modDestGranLen,
+    modDestLoopPos,
     modDestCount
 };
-
-// UI destinations shown in Instrument Automation (2/2)
-enum enAutomationDest : uint8_t
-{
-    autoDestVolume = 0,
-    autoDestPanning,
-    autoDestCutoff,
-    autoDestWtPos,
-    autoDestGranPos,
-    autoDestGranLen,
-    autoDestFinetune,
-    autoDestMod,
-    autoDestMod2,
-
-    autoDestCount
-};
-
-static constexpr envelopesType automationDestToEnvSlot(uint8_t destIdx)
-{
-    switch (destIdx)
-    {
-        case autoDestVolume: return envAmp;
-        case autoDestPanning: return envPan;
-        case autoDestCutoff: return envCutoff;
-        case autoDestWtPos: return envWtPos;
-        case autoDestGranPos: return envGranPos;
-        case autoDestGranLen: return envGranLen;
-        case autoDestFinetune: return envFinetune;
-        case autoDestMod: return envMod;
-        case autoDestMod2: return envMod2;
-        default: return envAmp;
-    }
-}
 
 enum lfoShapeType
 {
@@ -632,6 +608,7 @@ enum SaturationType
 struct strInstrument
 {
     uint8_t isActive;
+    uint8_t extraModDest[3]; // Reuses 3B alignment padding before sample; 100% .pti compatible
 
     struct strSampleBankSlot
     {
@@ -653,6 +630,7 @@ struct strInstrument
     void setStreamPreferred(bool streamed) { name[3] = streamed ? kStreamPrefMagic : 0; }
 
     uint8_t playMode;
+    uint8_t extraModMagic; // Reuses 1B alignment padding before startPoint; 100% .pti compatible
     uint16_t startPoint;
     uint16_t loopPoint1;
     uint16_t loopPoint2;
@@ -756,41 +734,51 @@ struct strInstrument
     bool isSynthParamsInitialized() const
     {
         const auto& sp = synthParams();
+        const uint8_t maxWave = synthosc::maxWaveCount(sp.mode);
         return sp.initialized == synthosc::kInitMagic &&
                sp.mode < synthosc::kModeCount &&
-               sp.waveA < synthosc::kWaveCount &&
-               sp.waveB < synthosc::kWaveCount;
+               sp.waveA < maxWave &&
+               sp.waveB < maxWave;
     }
 
     bool isEnvEnabled(uint8_t envIdx) const
     {
         if (envIdx == envWtPos)
         {
-            return (playMode == playModeGranular) ? isGranLenEnvEnabled() : isWtPosEnvEnabled();
+            if (playMode == playModeGranular)
+            {
+                return isGranLenEnvEnabled();
+            }
+            if (playMode == playModeWavetable || playMode == playModeSynth)
+            {
+                return isWtPosEnvEnabled();
+            }
+            return false;
         }
         if (envIdx == envGranPos && playMode != playModeGranular)
         {
-            return (modDestination != modDestOff) && (envelope[envGranPos].enable != 0);
+            return (envelope[envGranPos].enable != 0) && (modDestination != modDestOff);
         }
-        if (envIdx == envMod2)
+        if (envIdx >= envMod2 && envIdx < envEngineMax)
         {
-            return hasMod2Initialized() &&
-                   (mod2Slot()->modDestination != modDestOff) &&
-                   (mod2Slot()->envelope.enable != 0);
+            const uint8_t extraIdx = envIdx - envMod2;
+            return hasExtraModInitialized(extraIdx) &&
+                   (extraModSlot(extraIdx)->envelope.enable != 0) &&
+                   (extraModDest[extraIdx] != modDestOff);
         }
         return (envIdx < envMax) && (envelope[envIdx].enable != 0);
     }
 
-    static constexpr size_t kMod2ByteOffset = 12;
-    static constexpr uint8_t kMod2Magic = 0xA6;
+    static constexpr size_t kExtraModByteOffset = 12;
+    static constexpr size_t kMod2ByteOffset = kExtraModByteOffset;
+    static constexpr uint8_t kExtraModSlotCount = envEngineMax - envMax; // 3 (envMod2..envMod4)
+    static constexpr uint8_t kDynamicPoolMax = 1 + kExtraModSlotCount;  // 4 (envMod..envMod4)
+    static constexpr uint8_t kExtraModMagic = 0xA6;
 
     struct strExtraModSlot
     {
         envelopeGenerator::strEnv envelope;
         strEnvBasedLfo lfo;
-        uint8_t modDestination;
-        uint8_t magic;
-        uint8_t reserved[2];
     };
 
     static constexpr bool isSlicePlayMode(uint8_t pm)
@@ -799,26 +787,41 @@ struct strInstrument
     }
 
     bool isSliceMode() const { return isSlicePlayMode(playMode); }
-    bool isMod2Available() const { return !isSliceMode(); }
+    bool isExtraModAvailable() const { return !isSliceMode(); }
+    bool isMod2Available() const { return isExtraModAvailable(); }
 
-    strExtraModSlot* mod2Slot()
+    uint8_t* extraModSliceGuard()
+    {
+        return reinterpret_cast<uint8_t*>(slices) + sizeof(strSynthParams);
+    }
+
+    const uint8_t* extraModSliceGuard() const
+    {
+        return reinterpret_cast<const uint8_t*>(slices) + sizeof(strSynthParams);
+    }
+
+    strExtraModSlot* extraModSlot(uint8_t extraIdx = 0)
     {
         return reinterpret_cast<strExtraModSlot*>(
-          reinterpret_cast<uint8_t*>(slices) + kMod2ByteOffset);
+          reinterpret_cast<uint8_t*>(slices) + kExtraModByteOffset +
+          (size_t)extraIdx * sizeof(strExtraModSlot));
     }
 
-    const strExtraModSlot* mod2Slot() const
+    const strExtraModSlot* extraModSlot(uint8_t extraIdx = 0) const
     {
         return reinterpret_cast<const strExtraModSlot*>(
-          reinterpret_cast<const uint8_t*>(slices) + kMod2ByteOffset);
+          reinterpret_cast<const uint8_t*>(slices) + kExtraModByteOffset +
+          (size_t)extraIdx * sizeof(strExtraModSlot));
     }
 
-    bool hasMod2Initialized() const
+    bool hasExtraModInitialized(uint8_t extraIdx = 0) const
     {
-        return isMod2Available() && (mod2Slot()->magic == kMod2Magic);
+        return isExtraModAvailable() && (extraIdx < kExtraModSlotCount) &&
+               (extraModMagic == kExtraModMagic) && (extraModSliceGuard()[0] == kExtraModMagic) &&
+               (extraModSliceGuard()[1] == static_cast<uint8_t>(~kExtraModMagic));
     }
 
-    static const envelopeGenerator::strEnv& defaultMod2Env()
+    static const envelopeGenerator::strEnv& defaultExtraModEnv()
     {
         static const envelopeGenerator::strEnv kDefaultEnv = {
             1.0f, 0, 3000, 0, 0, 1.0f, 1000, 0, 0
@@ -826,7 +829,7 @@ struct strInstrument
         return kDefaultEnv;
     }
 
-    static const strEnvBasedLfo& defaultMod2Lfo()
+    static const strEnvBasedLfo& defaultExtraModLfo()
     {
         static const strEnvBasedLfo kDefaultLfo = {
             lfoShapeDefault, 0, 0, 0, 0.5f
@@ -834,48 +837,74 @@ struct strInstrument
         return kDefaultLfo;
     }
 
-    void initMod2Default()
+    void initAllExtraModsDefault()
     {
-        if (!isMod2Available())
+        if (!isExtraModAvailable())
         {
             return;
         }
-        auto* slot = mod2Slot();
-        slot->envelope = defaultMod2Env();
-        slot->lfo = defaultMod2Lfo();
-        slot->modDestination = modDestOff;
-        slot->magic = kMod2Magic;
-        slot->reserved[0] = 0;
-        slot->reserved[1] = 0;
+        extraModMagic = kExtraModMagic;
+        extraModSliceGuard()[0] = kExtraModMagic;
+        extraModSliceGuard()[1] = static_cast<uint8_t>(~kExtraModMagic);
+        for (uint8_t i = 0; i < kExtraModSlotCount; i++)
+        {
+            auto* slot = extraModSlot(i);
+            slot->envelope = defaultExtraModEnv();
+            slot->lfo = defaultExtraModLfo();
+            extraModDest[i] = modDestOff;
+        }
     }
 
-    void ensureMod2Initialized()
+    void initExtraModDefault(uint8_t extraIdx)
     {
-        if (isMod2Available() && (mod2Slot()->magic != kMod2Magic))
+        if (!isExtraModAvailable() || extraIdx >= kExtraModSlotCount)
         {
-            initMod2Default();
+            return;
+        }
+        if (!hasExtraModInitialized(extraIdx))
+        {
+            initAllExtraModsDefault();
+            return;
+        }
+        auto* slot = extraModSlot(extraIdx);
+        slot->envelope = defaultExtraModEnv();
+        slot->lfo = defaultExtraModLfo();
+        extraModDest[extraIdx] = modDestOff;
+    }
+
+    void initMod2Default() { initAllExtraModsDefault(); }
+
+    void ensureExtraModInitialized(uint8_t extraIdx)
+    {
+        if (isExtraModAvailable() && extraIdx < kExtraModSlotCount &&
+            !hasExtraModInitialized(extraIdx))
+        {
+            initAllExtraModsDefault();
         }
     }
 
     const envelopeGenerator::strEnv& getEnv(uint8_t envIdx) const
     {
-        if (envIdx == envMod2)
+        if (envIdx >= envMod2 && envIdx < envEngineMax)
         {
-            return hasMod2Initialized() ? mod2Slot()->envelope : defaultMod2Env();
+            const uint8_t extraIdx = envIdx - envMod2;
+            return hasExtraModInitialized(extraIdx) ? extraModSlot(extraIdx)->envelope
+                                                    : defaultExtraModEnv();
         }
-        return (envIdx < envMax) ? envelope[envIdx] : defaultMod2Env();
+        return (envIdx < envMax) ? envelope[envIdx] : defaultExtraModEnv();
     }
 
     envelopeGenerator::strEnv& mutEnv(uint8_t envIdx)
     {
-        if (envIdx == envMod2)
+        if (envIdx >= envMod2 && envIdx < envEngineMax)
         {
-            if (isMod2Available())
+            const uint8_t extraIdx = envIdx - envMod2;
+            if (isExtraModAvailable())
             {
-                ensureMod2Initialized();
-                return mod2Slot()->envelope;
+                ensureExtraModInitialized(extraIdx);
+                return extraModSlot(extraIdx)->envelope;
             }
-            static envelopeGenerator::strEnv s_sliceScratchEnv = defaultMod2Env();
+            static envelopeGenerator::strEnv s_sliceScratchEnv = defaultExtraModEnv();
             return s_sliceScratchEnv;
         }
         return envelope[(envIdx < envMax) ? envIdx : 0];
@@ -883,23 +912,26 @@ struct strInstrument
 
     const strEnvBasedLfo& getLfo(uint8_t envIdx) const
     {
-        if (envIdx == envMod2)
+        if (envIdx >= envMod2 && envIdx < envEngineMax)
         {
-            return hasMod2Initialized() ? mod2Slot()->lfo : defaultMod2Lfo();
+            const uint8_t extraIdx = envIdx - envMod2;
+            return hasExtraModInitialized(extraIdx) ? extraModSlot(extraIdx)->lfo
+                                                    : defaultExtraModLfo();
         }
-        return (envIdx < envMax) ? lfo[envIdx] : defaultMod2Lfo();
+        return (envIdx < envMax) ? lfo[envIdx] : defaultExtraModLfo();
     }
 
     strEnvBasedLfo& mutLfo(uint8_t envIdx)
     {
-        if (envIdx == envMod2)
+        if (envIdx >= envMod2 && envIdx < envEngineMax)
         {
-            if (isMod2Available())
+            const uint8_t extraIdx = envIdx - envMod2;
+            if (isExtraModAvailable())
             {
-                ensureMod2Initialized();
-                return mod2Slot()->lfo;
+                ensureExtraModInitialized(extraIdx);
+                return extraModSlot(extraIdx)->lfo;
             }
-            static strEnvBasedLfo s_sliceScratchLfo = defaultMod2Lfo();
+            static strEnvBasedLfo s_sliceScratchLfo = defaultExtraModLfo();
             return s_sliceScratchLfo;
         }
         return lfo[(envIdx < envMax) ? envIdx : 0];
@@ -907,16 +939,21 @@ struct strInstrument
 
     uint8_t getModDestination(uint8_t modIdx = 0) const
     {
-        if (modIdx == 1)
+        if (modIdx >= 1 && modIdx < kDynamicPoolMax)
         {
-            if (!hasMod2Initialized())
+            const uint8_t extraIdx = modIdx - 1;
+            if (!hasExtraModInitialized(extraIdx))
             {
                 return modDestOff;
             }
-            const uint8_t dest = mod2Slot()->modDestination;
+            const uint8_t dest = extraModDest[extraIdx];
             return (dest < modDestCount) ? dest : (uint8_t)modDestOff;
         }
-        return (modDestination < modDestCount) ? modDestination : (uint8_t)modDestOff;
+        if (modIdx == 0)
+        {
+            return (modDestination < modDestCount) ? modDestination : (uint8_t)modDestOff;
+        }
+        return modDestOff;
     }
 
     void setModDestination(uint8_t modIdx, uint8_t dest)
@@ -925,76 +962,211 @@ struct strInstrument
         {
             dest = modDestOff;
         }
-        if (modIdx == 1)
+        if (modIdx >= 1 && modIdx < kDynamicPoolMax)
         {
-            if (!isMod2Available())
+            const uint8_t extraIdx = modIdx - 1;
+            if (!isExtraModAvailable())
             {
                 return;
             }
-            ensureMod2Initialized();
-            mod2Slot()->modDestination = dest;
+            ensureExtraModInitialized(extraIdx);
+            extraModDest[extraIdx] = dest;
         }
-        else
+        else if (modIdx == 0)
         {
             modDestination = dest;
         }
     }
 
-    bool isAutomationDestEnabled(uint8_t destIdx) const
+    static constexpr uint8_t poolIdxToEnvSlot(uint8_t modIdx)
     {
-        if (destIdx == autoDestWtPos)
-            return isWtPosEnvEnabled();
-        if (destIdx == autoDestGranLen)
-            return isGranLenEnvEnabled();
-        if (destIdx == autoDestMod2)
-            return hasMod2Initialized() && (mod2Slot()->envelope.enable != 0);
-        return envelope[automationDestToEnvSlot(destIdx)].enable != 0;
+        return (modIdx == 0) ? (uint8_t)envMod : (uint8_t)(envMod2 + modIdx - 1);
     }
 
-    void setAutomationDestEnabled(uint8_t destIdx, bool enabled)
+    bool isPoolSlotAvailable(uint8_t modIdx) const
     {
-        if (destIdx == autoDestWtPos)
+        if (modIdx == 0)
         {
-            if (enabled)
-                envelope[envWtPos].enable |= kEnvEnableWtPosBit;
-            else
-                envelope[envWtPos].enable &= ~kEnvEnableWtPosBit;
+            return playMode != playModeGranular;
         }
-        else if (destIdx == autoDestGranLen)
+        return (modIdx < kDynamicPoolMax) && isExtraModAvailable();
+    }
+
+    uint8_t getDynamicPoolCapacity() const
+    {
+        uint8_t cap = 0;
+        for (uint8_t i = 0; i < kDynamicPoolMax; i++)
         {
-            if (enabled)
-                envelope[envGranLen].enable |= kEnvEnableGranLenBit;
-            else
-                envelope[envGranLen].enable &= ~kEnvEnableGranLenBit;
+            if (isPoolSlotAvailable(i))
+            {
+                cap++;
+            }
         }
-        else if (destIdx == autoDestMod2)
+        return cap;
+    }
+
+    uint8_t getDynamicPoolUsedCount() const
+    {
+        uint8_t used = 0;
+        for (uint8_t i = 0; i < kDynamicPoolMax; i++)
         {
-            if (!isMod2Available())
-                return;
-            ensureMod2Initialized();
-            mod2Slot()->envelope.enable = enabled ? 1 : 0;
+            if (!isPoolSlotAvailable(i))
+            {
+                continue;
+            }
+            const uint8_t slot = poolIdxToEnvSlot(i);
+            if (isEnvEnabled(slot))
+            {
+                used++;
+            }
+        }
+        return used;
+    }
+
+    int8_t getFixedEnvSlotForDest(enModDestination dest) const
+    {
+        switch (dest)
+        {
+            case modDestVolume: return envAmp;
+            case modDestPanning: return envPan;
+            case modDestCutoff: return envCutoff;
+            case modDestWtPos:
+                return (playMode == playModeWavetable) ? (int8_t)envWtPos : -1;
+            case modDestGranLen:
+                return (playMode == playModeGranular) ? (int8_t)envGranLen : -1;
+            case modDestPulseWidth:
+                return (playMode == playModeSynth) ? (int8_t)envWtPos : -1;
+            case modDestGranPos:
+                return (playMode == playModeGranular) ? (int8_t)envGranPos : -1;
+            case modDestFinetune: return envFinetune;
+            default: return -1;
+        }
+    }
+
+    int8_t findEnvSlotForDest(enModDestination dest) const
+    {
+        if (dest == modDestOff || dest >= modDestCount)
+        {
+            return -1;
+        }
+        const int8_t fixed = getFixedEnvSlotForDest(dest);
+        if (fixed >= 0)
+        {
+            return fixed;
+        }
+        for (uint8_t i = 0; i < kDynamicPoolMax; i++)
+        {
+            if (!isPoolSlotAvailable(i))
+            {
+                continue;
+            }
+            if (getModDestination(i) == dest)
+            {
+                return (int8_t)poolIdxToEnvSlot(i);
+            }
+        }
+        return -1;
+    }
+
+    int8_t acquireEnvSlotForDest(enModDestination dest)
+    {
+        if (dest == modDestOff || dest >= modDestCount)
+        {
+            return -1;
+        }
+        const int8_t existing = findEnvSlotForDest(dest);
+        if (existing >= 0)
+        {
+            return existing;
+        }
+        for (uint8_t i = 0; i < kDynamicPoolMax; i++)
+        {
+            if (!isPoolSlotAvailable(i))
+            {
+                continue;
+            }
+            const uint8_t slot = poolIdxToEnvSlot(i);
+            if (!isEnvEnabled(slot) || getModDestination(i) == modDestOff)
+            {
+                if (i >= 1)
+                {
+                    ensureExtraModInitialized(i - 1);
+                }
+                setModDestination(i, dest);
+                return (int8_t)slot;
+            }
+        }
+        return -1;
+    }
+
+    bool isDestAutomationActive(enModDestination dest) const
+    {
+        const int8_t slot = findEnvSlotForDest(dest);
+        return (slot >= 0) && isEnvEnabled((uint8_t)slot);
+    }
+
+    void setDestAutomationEnabled(enModDestination dest, bool enabled)
+    {
+        const int8_t fixed = getFixedEnvSlotForDest(dest);
+        if (fixed >= 0)
+        {
+            if (fixed == envWtPos)
+            {
+                const uint8_t bit =
+                  (playMode == playModeGranular) ? kEnvEnableGranLenBit : kEnvEnableWtPosBit;
+                if (enabled)
+                    envelope[envWtPos].enable |= bit;
+                else
+                    envelope[envWtPos].enable &= ~bit;
+            }
+            else
+            {
+                envelope[fixed].enable = enabled ? 1 : 0;
+            }
+            return;
+        }
+        if (enabled)
+        {
+            const int8_t slot = acquireEnvSlotForDest(dest);
+            if (slot >= 0)
+            {
+                mutEnv((uint8_t)slot).enable = 1;
+            }
         }
         else
         {
-            envelope[automationDestToEnvSlot(destIdx)].enable = enabled ? 1 : 0;
+            for (uint8_t i = 0; i < kDynamicPoolMax; i++)
+            {
+                if (isPoolSlotAvailable(i) && getModDestination(i) == dest)
+                {
+                    const uint8_t slot = poolIdxToEnvSlot(i);
+                    mutEnv(slot).enable = 0;
+                    setModDestination(i, modDestOff);
+                }
+            }
         }
     }
 };
 static_assert(sizeof(strInstrument) == 372, "strInstrument size must remain 372 bytes");
-static_assert(sizeof(strInstrument::strSynthParams) <= strInstrument::kMod2ByteOffset,
-              "strSynthParams must not overlap Mod 2 slot in slices overlay");
-static_assert(strInstrument::kMod2ByteOffset + sizeof(strInstrument::strExtraModSlot) <=
+static_assert(sizeof(strInstrument::strExtraModSlot) == 28,
+              "strExtraModSlot size must remain 28 bytes");
+static_assert(sizeof(strInstrument::strSynthParams) + 2 <= strInstrument::kExtraModByteOffset,
+              "strSynthParams + 2B guard must fit before kExtraModByteOffset");
+static_assert(strInstrument::kExtraModByteOffset +
+                  strInstrument::kExtraModSlotCount * sizeof(strInstrument::strExtraModSlot) <=
                 sizeof(strInstrument::slices),
-              "strExtraModSlot must fit inside slices overlay");
-static_assert((offsetof(strInstrument, slices) + strInstrument::kMod2ByteOffset) % 4 == 0,
+              "Dynamic modulator pool must fit inside slices overlay");
+static_assert((offsetof(strInstrument, slices) + strInstrument::kExtraModByteOffset) % 4 == 0,
               "strExtraModSlot must be 4-byte aligned for Cortex-M4F float access");
 
 //----------------------------------------------------------------------------------
 const strInstrument defaultInstrumentParams = {
     .isActive = 0,
+    .extraModDest = { 0, 0, 0 },
     .sample = { 0, {}, nullptr, 0, 2048, 0 },
     .name = {},
     .playMode = playModeSingleShot,
+    .extraModMagic = 0,
     .startPoint = 0,
     .loopPoint1 = 1,
     .loopPoint2 = MAX_16BIT - 1,

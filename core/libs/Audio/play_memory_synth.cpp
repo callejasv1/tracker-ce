@@ -38,6 +38,13 @@ AUDIO_CORE_FLASH void AudioPlayMemory::playSynth(uint8_t instrIdx, int8_t note)
     synthMod = 0;
     synthMod2 = 0;
     synthPwMod = 0;
+    synthTimbreBMod = 0;
+    synthOscBPitchModCents = 0;
+    synthDetuneMod = 0;
+    synthSubLevelMod = 0;
+    synthNoiseLevelMod = 0;
+    synthOscBLevelMod = 0;
+    lastSynthOscBPitchModCents = 0;
     lastSynthMode = 0xFF;
 
     playing = 1;
@@ -84,71 +91,48 @@ AUDIO_CORE_RAM audio_block_t* AudioPlayMemory::updateSynth()
     const auto& instr = mtProject.instrument[currentInstrIdx];
     const auto& sp = instr.synthParams();
 
-    // Pitch ratios for Osc B / Swarm (recompute only when ratio params change)
-    if (sp.mode != lastSynthMode || sp.semiB != lastSynthSemiB || sp.detune != lastSynthDetune)
+    // Pitch ratios for Osc B / Swarm (recompute only when ratio params or pitch mods change)
+    const int16_t oscBCentsMod = (int16_t)(synthOscBPitchModCents + synthDetuneMod);
+    if (sp.mode != lastSynthMode || sp.semiB != lastSynthSemiB || sp.detune != lastSynthDetune ||
+        oscBCentsMod != lastSynthOscBPitchModCents)
     {
-        synthosc::computeRatios(sp, synthRatioB, synthRatioC);
+        synthosc::computeRatios(sp, synthRatioB, synthRatioC, (int32_t)oscBCentsMod);
         lastSynthMode = sp.mode;
         lastSynthSemiB = sp.semiB;
         lastSynthDetune = sp.detune;
+        lastSynthOscBPitchModCents = oscBCentsMod;
     }
 
-    const int16_t modVals[2] = { synthMod, synthMod2 };
-    const uint8_t modDests[2] = {
-        instr.getModDestination(0),
-        instr.getModDestination(1),
-    };
-
     // Pulse width modulation:
-    // Slot 3 (envWtPos) sets synthPwMod (-100..+100), Sequencer FX Position overrides base PW
+    // Unified synth*Mod values include Timbre/DCW Env, Mod 1/2, and Mod Matrix slots.
+    // Sequencer FX Position overrides base PW.
     int32_t pwMod = (int32_t)synthPwMod;
     if (wavetableWindowForceFlag)
     {
         pwMod += (int32_t)forcedWavetableWindow - (int32_t)sp.pw;
     }
-    int32_t detuneDelta = 0;
-    int32_t subDelta = 0;
-    int32_t noiseDelta = 0;
-    int32_t levelBDelta = 0;
-    for (int m = 0; m < 2; m++)
-    {
-        if (modVals[m] == 0)
-            continue;
-        switch (modDests[m])
-        {
-            case modDestPulseWidth: pwMod += (int32_t)modVals[m]; break;
-            case modDestDetune: detuneDelta += (int32_t)modVals[m]; break;
-            case modDestSubLevel: subDelta += (int32_t)modVals[m]; break;
-            case modDestNoiseLevel: noiseDelta += (int32_t)modVals[m]; break;
-            case modDestOscBLevel: levelBDelta += (int32_t)modVals[m]; break;
-            default: break;
-        }
-    }
 
-    synthosc::buildBlockParams(sp, incA, synthRatioB, synthRatioC, pwMod, synthBlockParams);
+    synthosc::buildBlockParams(
+      sp, incA, synthRatioB, synthRatioC, pwMod, synthBlockParams, (int32_t)synthTimbreBMod);
 
-    if (detuneDelta != 0)
+    if (synthSubLevelMod != 0)
     {
-        float detRatio = synthosc::centsToRatio(detuneDelta);
-        synthBlockParams.incB = (uint32_t)((float)synthBlockParams.incB * detRatio);
-    }
-    if (subDelta != 0)
-    {
-        int32_t subLevel = std::clamp<int32_t>((int32_t)sp.sub + subDelta, 0, 100);
+        int32_t subLevel = std::clamp<int32_t>((int32_t)sp.sub + synthSubLevelMod, 0, 100);
         synthBlockParams.gainSub = synthosc::levelToGainQ12((uint8_t)subLevel);
     }
-    if (noiseDelta != 0)
+    if (synthNoiseLevelMod != 0)
     {
-        int32_t noiseLevel = std::clamp<int32_t>((int32_t)sp.noise + noiseDelta, 0, 100);
+        int32_t noiseLevel = std::clamp<int32_t>((int32_t)sp.noise + synthNoiseLevelMod, 0, 100);
         synthBlockParams.gainNoise = synthosc::levelToGainQ12((uint8_t)noiseLevel) >> 1;
     }
-    if (levelBDelta != 0)
+    if (synthOscBLevelMod != 0)
     {
-        int32_t levelB = std::clamp<int32_t>((int32_t)sp.levelB + levelBDelta, 0, 100);
+        int32_t levelB = std::clamp<int32_t>((int32_t)sp.levelB + synthOscBLevelMod, 0, 100);
         synthBlockParams.gainB = synthosc::levelToGainQ12((uint8_t)levelB);
     }
 
-    synthOsc.render(sp.mode, sp.waveA, sp.waveB, synthBlockParams, block->data, AUDIO_BLOCK_SAMPLES);
+    synthOsc.render(
+      sp.mode, sp.waveA, sp.waveB, synthBlockParams, block->data, AUDIO_BLOCK_SAMPLES);
 
     return block;
 }

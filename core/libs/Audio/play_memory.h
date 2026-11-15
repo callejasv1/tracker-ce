@@ -126,6 +126,12 @@ class AudioPlayMemory : public AudioStream
     void setSynthMod(int16_t val) { synthMod = val; }
     void setSynthMod2(int16_t val) { synthMod2 = val; }
     void setSynthPwMod(int16_t val) { synthPwMod = val; }
+    void setSynthTimbreBMod(int16_t val) { synthTimbreBMod = val; }
+    void setSynthOscBPitchModCents(int16_t val) { synthOscBPitchModCents = val; }
+    void setSynthDetuneMod(int16_t val) { synthDetuneMod = val; }
+    void setSynthSubLevelMod(int16_t val) { synthSubLevelMod = val; }
+    void setSynthNoiseLevelMod(int16_t val) { synthNoiseLevelMod = val; }
+    void setSynthOscBLevelMod(int16_t val) { synthOscBLevelMod = val; }
     //*********
     //*****************************************************************
     //*********Wymuszanie Parametrów z Sequencera lub PerformanceMode
@@ -206,6 +212,7 @@ class AudioPlayMemory : public AudioStream
     uint8_t envelopeGetEndReleaseKill();
     void envelopeClearEndReleaseKill();
     uint8_t envelopeGetState();
+    float envelopeGetLevel() const { return (float)envelope.mult_hires * (1.0f / (float)0x40000000); }
 
     void envelopeSyncTrackerSeq(uint32_t val, float seqSpeed);
     void envelopeSetSyncStartStep(uint16_t n);
@@ -471,6 +478,13 @@ class AudioPlayMemory : public AudioStream
     int16_t synthMod = 0;
     int16_t synthMod2 = 0;
     int16_t synthPwMod = 0;
+    int16_t synthTimbreBMod = 0;
+    int16_t synthOscBPitchModCents = 0;
+    int16_t synthDetuneMod = 0;
+    int16_t synthSubLevelMod = 0;
+    int16_t synthNoiseLevelMod = 0;
+    int16_t synthOscBLevelMod = 0;
+    int16_t lastSynthOscBPitchModCents = 0;
     bool synthOscInitialized = false;
     uint8_t lastSynthMode = 0xFF;
     int8_t lastSynthSemiB = 127;
