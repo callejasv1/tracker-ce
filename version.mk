@@ -1,12 +1,12 @@
 # Polyend Tracker Community Edition (CE) Centralized Version Configuration
 
-EDITION_NAME := CE
+EDITION_NAME := CE_CZ
 VER_ROOT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 BUILD_TAG    ?= $(shell git -C "$(VER_ROOT_DIR)" rev-parse --short=7 HEAD 2>/dev/null || date +"%Y%m%d")
 
 # Original Tracker (MK66)
 ORIGINAL_VER_MAJOR := 1
-ORIGINAL_VER_MINOR := 0
+ORIGINAL_VER_MINOR := 1
 ORIGINAL_VER_PATCH := 0
 ORIGINAL_VER_BETA  := 255
 

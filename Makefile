@@ -14,6 +14,8 @@ IMX_DIR       := $(ROOT_DIR)/platforms/imx
 SYNTH_DIR     := $(ROOT_DIR)/synth
 UTIL_DIR      := $(ROOT_DIR)/util
 OUT_DIR       := $(ROOT_DIR)/build
+STRESS_DIR    ?= $(abspath $(ROOT_DIR)/../tracker-lib-stress)
+INCLUDE_STRESS_PROJECTS ?= 1
 
 include $(ROOT_DIR)/version.mk
 
@@ -23,7 +25,7 @@ MINI_POSTFIX     ?= $(EDITION_NAME)_$(MINI_VER_MAJOR).$(MINI_VER_MINOR).$(MINI_V
 
 .DEFAULT_GOAL := all
 
-.PHONY: all original plus mini ptfx psyn clean version bump-patch bump-minor
+.PHONY: all original plus mini ptfx psyn sd-projects clean version bump-patch bump-minor
 
 all: original plus mini psyn
 
@@ -37,7 +39,9 @@ original:
 	@echo "=================================================================="
 	@echo " Building Original Tracker (MK66) - $(EDITION_NAME) $(ORIGINAL_VER_MAJOR).$(ORIGINAL_VER_MINOR).$(ORIGINAL_VER_PATCH) ($(BUILD_TAG))"
 	@echo "=================================================================="
-	@rm -f "$(MK66_DIR)/build/obj/source/PlatformImpl.o"
+	@rm -f "$(MK66_DIR)/build/obj/source/PlatformImpl.o" \
+		"$(CORE_DIR)/build-MK66-ORIGINAL/obj/interface/core/interface.o" \
+		"$(CORE_DIR)/build-MK66-ORIGINAL/obj/source/mtConfig.o"
 	$(MAKE) -C "$(CORE_DIR)" -j$(NPROC) build \
 		TOOLCHAIN="$(TOOLCHAIN)" \
 		PLATFORM=MK66 PRODUCT=ORIGINAL \
@@ -49,9 +53,23 @@ original:
 		PRODUCT=ORIGINAL \
 		TARGET_POSTFIX="$(ORIGINAL_POSTFIX)" \
 		BUILD_ID_STR="$(BUILD_ID_STR)"
-	@mkdir -p "$(OUT_DIR)"
+	@mkdir -p "$(OUT_DIR)/Firmware"
 	@cp "$(MK66_DIR)/build/PolyendTracker_$(ORIGINAL_POSTFIX).ptf" "$(OUT_DIR)/"
+	@cp "$(MK66_DIR)/build/PolyendTracker_$(ORIGINAL_POSTFIX).ptf" "$(OUT_DIR)/Firmware/"
 	@echo "-> Output: $(OUT_DIR)/PolyendTracker_$(ORIGINAL_POSTFIX).ptf"
+	@$(MAKE) sd-projects
+
+sd-projects:
+ifeq ($(INCLUDE_STRESS_PROJECTS),1)
+ifneq ($(wildcard $(STRESS_DIR)/package.json),)
+	@if command -v npm >/dev/null 2>&1; then \
+		echo "-> Bundling SD-ready stress projects into $(OUT_DIR)/Projects ..."; \
+		npm --prefix "$(STRESS_DIR)" run --silent export:sd -- "$(OUT_DIR)/Projects"; \
+	else \
+		echo "-> Skipping SD stress projects (npm not found in PATH)"; \
+	fi
+endif
+endif
 
 plus:
 	@echo "=================================================================="
@@ -76,9 +94,11 @@ plus:
 		PRODUCT=PLUS \
 		TARGET_POSTFIX="$(PLUS_POSTFIX)" \
 		BUILD_ID_STR="$(BUILD_ID_STR)"
-	@mkdir -p "$(OUT_DIR)"
+	@mkdir -p "$(OUT_DIR)/Firmware"
 	@cp "$(IMX_DIR)/build-PLUS/TrackerPlus_$(PLUS_POSTFIX).ptf" "$(OUT_DIR)/"
+	@cp "$(IMX_DIR)/build-PLUS/TrackerPlus_$(PLUS_POSTFIX).ptf" "$(OUT_DIR)/Firmware/"
 	@echo "-> Output: $(OUT_DIR)/TrackerPlus_$(PLUS_POSTFIX).ptf"
+	@$(MAKE) sd-projects
 
 mini:
 	@echo "=================================================================="
@@ -103,9 +123,11 @@ mini:
 		PRODUCT=MINI \
 		TARGET_POSTFIX="$(MINI_POSTFIX)" \
 		BUILD_ID_STR="$(BUILD_ID_STR)"
-	@mkdir -p "$(OUT_DIR)"
+	@mkdir -p "$(OUT_DIR)/Firmware"
 	@cp "$(IMX_DIR)/build-MINI/TrackerMini_$(MINI_POSTFIX).ptf" "$(OUT_DIR)/"
+	@cp "$(IMX_DIR)/build-MINI/TrackerMini_$(MINI_POSTFIX).ptf" "$(OUT_DIR)/Firmware/"
 	@echo "-> Output: $(OUT_DIR)/TrackerMini_$(MINI_POSTFIX).ptf"
+	@$(MAKE) sd-projects
 
 ptfx:
 	@mkdir -p "$(ROOT_DIR)/editor-fx-sdk/build/Effects"
