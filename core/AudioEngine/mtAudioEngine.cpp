@@ -1703,6 +1703,8 @@ playerEngine::playerEngine()
       audioVoice.getEnvelopeGenerator(AudioVoice::EnvelopeGeneratorType::kGranularPosition);
     envelopePtr[envFinetune] =
       audioVoice.getEnvelopeGenerator(AudioVoice::EnvelopeGeneratorType::kFinetune);
+    envelopePtr[envMod2] =
+      audioVoice.getEnvelopeGenerator(AudioVoice::EnvelopeGeneratorType::kMod2);
 
     for (int channel = 0; channel < (int)playMemPtr.size(); channel++)
     {
@@ -2429,10 +2431,10 @@ void playerEngine::init(
     playerEngine::preDelayMixer = preDelayMixer;
     playerEngine::prePolyverbMixer = prePolyverbMixer;
 
-    for (int envIdx = 1; envIdx < envMax; envIdx++)
+    for (int envIdx = 1; envIdx < ACTIVE_ENVELOPES; envIdx++)
     {
         envelopePtr[envIdx]->begin(timer);
-        envelopePtr[envIdx]->init(&mtProject.instrument[0].envelope[envIdx]);
+        envelopePtr[envIdx]->init(const_cast<envelopeGenerator::strEnv*>(&mtProject.instrument[0].getEnv(envIdx)));
     }
 
     for (int channel = 0; channel < (int)playMemPtr.size(); channel++)

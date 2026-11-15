@@ -90,7 +90,28 @@ const char* const modDestNames[modDestCount] = {
     "Osc B Level"
 };
 
-static char modDestLabelBuf[32] = "Mod: Off";
+static char mod1DestLabelBuf[32] = "Mod 1: Off";
+static char mod2DestLabelBuf[32] = "Mod 2: Off";
+
+static void refreshModDestLabels(const strInstrument* instr)
+{
+    if (!instr)
+    {
+        return;
+    }
+    const uint8_t dest1 = instr->getModDestination(0);
+    snprintf(mod1DestLabelBuf, sizeof(mod1DestLabelBuf), "Mod 1: %s", modDestNames[dest1]);
+
+    if (instr->isSliceMode())
+    {
+        strcpy(mod2DestLabelBuf, "Mod 2: Slice N/A");
+    }
+    else
+    {
+        const uint8_t dest2 = instr->getModDestination(1);
+        snprintf(mod2DestLabelBuf, sizeof(mod2DestLabelBuf), "Mod 2: %s", modDestNames[dest2]);
+    }
+}
 
 const char* envelopesLabels[autoDestCount] = {
     "Volume",
@@ -100,7 +121,8 @@ const char* envelopesLabels[autoDestCount] = {
     "Granular Position",
     "Granular Length",
     "Finetune",
-    modDestLabelBuf
+    mod1DestLabelBuf,
+    mod2DestLabelBuf
 };
 
 const char* const envStateLabels[5] = { "Off", "Envelope", "LFO", "WT Env", "WT LFO" };
@@ -425,19 +447,16 @@ void cInstrumentEditor::showInstrumentEnv()
     display.setControlHide(label[0]);
     display.setControlHide(label[1]);
 
-    if (editorInstrument)
-    {
-        if (editorInstrument->modDestination < modDestCount)
-            snprintf(modDestLabelBuf, sizeof(modDestLabelBuf), "Mod: %s", modDestNames[editorInstrument->modDestination]);
-        else
-            strcpy(modDestLabelBuf, "Mod: Off");
-    }
+    refreshModDestLabels(editorInstrument);
 
-    if (selectedEnvelope == autoDestMod)
+    if (selectedEnvelope == autoDestMod || selectedEnvelope == autoDestMod2)
     {
+        const uint8_t modIdx = (selectedEnvelope == autoDestMod2) ? 1 : 0;
         display.setControlText(doubleLabelAutomation, "Target (Shift+Wheel)");
-        if (editorInstrument && editorInstrument->modDestination < modDestCount)
-            display.setControlText2(doubleLabelAutomation, modDestNames[editorInstrument->modDestination]);
+        if (modIdx == 1 && editorInstrument && editorInstrument->isSliceMode())
+            display.setControlText2(doubleLabelAutomation, "Slice N/A");
+        else if (editorInstrument)
+            display.setControlText2(doubleLabelAutomation, modDestNames[editorInstrument->getModDestination(modIdx)]);
         else
             display.setControlText2(doubleLabelAutomation, "Off");
     }
@@ -485,16 +504,17 @@ void cInstrumentEditor::showInstrumentEnv()
     display.setControlShow(list1Control);
 
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
+    const uint8_t initLoop = editorInstrument->getEnv(envSlot).loop;
     uint8_t curStateIdx = 0;
     if (!editorInstrument->isAutomationDestEnabled(selectedEnvelope))
         curStateIdx = 0;
-    else if (editorInstrument->envelope[envSlot].loop == 0)
+    else if (initLoop == 0)
         curStateIdx = 1;
-    else if (editorInstrument->envelope[envSlot].loop == 1)
+    else if (initLoop == 1)
         curStateIdx = 2;
-    else if (editorInstrument->envelope[envSlot].loop == 2)
+    else if (initLoop == 2)
         curStateIdx = 3;
-    else if (editorInstrument->envelope[envSlot].loop == 3)
+    else if (initLoop == 3)
         curStateIdx = 4;
 
     list2Data.linesCount = 5;
@@ -528,7 +548,7 @@ void cInstrumentEditor::showInstrumentEnv()
             gradient);
     }
 
-    uint8_t curLoop = editorInstrument->envelope[envSlot].loop;
+    uint8_t curLoop = editorInstrument->getEnv(envSlot).loop;
     if (curLoop == 0)
     {
         display.setControlText(label[3], "Attack");
@@ -572,12 +592,15 @@ void cInstrumentEditor::showInstrumentEnv()
         display.setControlHide(barControl[6]);
         display.setControlHide(barControl[7]);
 
-        uint8_t curSpeed = editorInstrument->lfo[envSlot].speed;
+        uint8_t curSpeed = editorInstrument->getLfo(envSlot).speed;
         uint8_t maxSpeed = (envSlot == envAmp) ? CONSTRAIN_SPEED_AMP_ENVELOPE : CONSTRAIN_SPEED_OTHER_ENVELOPE;
         if (curSpeed > maxSpeed)
         {
             curSpeed = 0;
-            editorInstrument->lfo[envSlot].speed = 0;
+            if (envSlot != envMod2 || editorInstrument->isMod2Available())
+            {
+                editorInstrument->mutLfo(envSlot).speed = 0;
+            }
         }
 
         if (envSlot == envAmp)
@@ -657,12 +680,15 @@ void cInstrumentEditor::showInstrumentEnv()
         display.setControlHide(list3Control);
         display.setControlShow(list4Control);
 
-        uint8_t curSpeed = editorInstrument->lfo[envSlot].speed;
+        uint8_t curSpeed = editorInstrument->getLfo(envSlot).speed;
         uint8_t maxSpeed = (envSlot == envAmp) ? CONSTRAIN_SPEED_AMP_ENVELOPE : CONSTRAIN_SPEED_OTHER_ENVELOPE;
         if (curSpeed > maxSpeed)
         {
             curSpeed = 0;
-            editorInstrument->lfo[envSlot].speed = 0;
+            if (envSlot != envMod2 || editorInstrument->isMod2Available())
+            {
+                editorInstrument->mutLfo(envSlot).speed = 0;
+            }
         }
 
         if (envSlot == envAmp)
@@ -1230,13 +1256,7 @@ void cInstrumentEditor::showInstList()
 
 void cInstrumentEditor::showEnvList()
 {
-    if (editorInstrument)
-    {
-        if (editorInstrument->modDestination < modDestCount)
-            snprintf(modDestLabelBuf, sizeof(modDestLabelBuf), "Mod: %s", modDestNames[editorInstrument->modDestination]);
-        else
-            strcpy(modDestLabelBuf, "Mod: Off");
-    }
+    refreshModDestLabels(editorInstrument);
     display.setControlValue(list1Control, selectedEnvelope);
     display.refreshControl(list1Control);
 }
@@ -1244,16 +1264,17 @@ void cInstrumentEditor::showEnvList()
 void cInstrumentEditor::showEnvState()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
+    const uint8_t curLoop = editorInstrument->getEnv(envSlot).loop;
     uint8_t val = 0;
     if (!editorInstrument->isAutomationDestEnabled(selectedEnvelope))
         val = 0;
-    else if (editorInstrument->envelope[envSlot].loop == 0)
+    else if (curLoop == 0)
         val = 1;
-    else if (editorInstrument->envelope[envSlot].loop == 1)
+    else if (curLoop == 1)
         val = 2;
-    else if (editorInstrument->envelope[envSlot].loop == 2)
+    else if (curLoop == 2)
         val = 3;
-    else if (editorInstrument->envelope[envSlot].loop == 3)
+    else if (curLoop == 3)
         val = 4;
 
     display.setControlText2(label[2], envStateLabels[val]);
@@ -1266,7 +1287,7 @@ void cInstrumentEditor::showEnvState()
 void cInstrumentEditor::showWtEnvWave()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    uint8_t shape = editorInstrument->lfo[envSlot].shape;
+    uint8_t shape = editorInstrument->getLfo(envSlot).shape;
     if (shape >= 128)
     {
         static bool s_userWavetablesLoaded = false;
@@ -1291,7 +1312,7 @@ void cInstrumentEditor::showWtEnvWave()
 void cInstrumentEditor::showWtWarpXY()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    uint8_t bend = editorInstrument->lfo[envSlot].wtBend;
+    uint8_t bend = editorInstrument->getLfo(envSlot).wtBend;
     int8_t wx = unpackWarpX(bend);
     int8_t wy = unpackWarpY(bend);
     sprintf(labelText[5], "%+d / %+d", wx, wy);
@@ -1305,7 +1326,7 @@ void cInstrumentEditor::showWtWarpXY()
 void cInstrumentEditor::showWtWarpX()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    int8_t wx = unpackWarpX(editorInstrument->lfo[envSlot].wtBend);
+    int8_t wx = unpackWarpX(editorInstrument->getLfo(envSlot).wtBend);
     sprintf(labelText[5], "%+d", wx);
 
     display.setControlText2(label[5], labelText[5]);
@@ -1317,7 +1338,7 @@ void cInstrumentEditor::showWtWarpX()
 void cInstrumentEditor::showWtWarpY()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    int8_t wy = unpackWarpY(editorInstrument->lfo[envSlot].wtBend);
+    int8_t wy = unpackWarpY(editorInstrument->getLfo(envSlot).wtBend);
     sprintf(labelText[6], "%+d", wy);
 
     display.setControlText2(label[6], labelText[6]);
@@ -1329,7 +1350,7 @@ void cInstrumentEditor::showWtWarpY()
 void cInstrumentEditor::showWtSustain()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    uint8_t sust = editorInstrument->lfo[envSlot].wtSust;
+    uint8_t sust = editorInstrument->getLfo(envSlot).wtSust;
     if (sust == 0)
         sprintf(labelText[6], "Off");
     else
@@ -1344,9 +1365,8 @@ void cInstrumentEditor::showWtSustain()
 void cInstrumentEditor::showEnvAttack()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    sprintf(labelText[3],
-            "%.3fs",
-            (float)(editorInstrument->envelope[envSlot].attack / 1000.0f));
+    const uint32_t attack = editorInstrument->getEnv(envSlot).attack;
+    sprintf(labelText[3], "%.3fs", (float)(attack / 1000.0f));
 
     if (editorInstrument->isAutomationDestEnabled(selectedEnvelope))
     {
@@ -1364,22 +1384,17 @@ void cInstrumentEditor::showEnvAttack()
 
     display.setControlValue(
       barControl[3],
-      (editorInstrument->envelope[envSlot].attack > ENVELOPE_MICRO_RANGE)
-        ? map<int>(editorInstrument->envelope[envSlot].attack,
-                   ENVELOPE_MICRO_RANGE,
-                   ATTACK_MAX,
-                   50,
-                   100)
-        : map<int>(
-            editorInstrument->envelope[envSlot].attack, 0, ENVELOPE_MICRO_RANGE, 0, 50));
+      (attack > ENVELOPE_MICRO_RANGE)
+        ? map<int>(attack, ENVELOPE_MICRO_RANGE, ATTACK_MAX, 50, 100)
+        : map<int>(attack, 0, ENVELOPE_MICRO_RANGE, 0, 50));
     display.refreshControl(barControl[3]);
 }
 
 void cInstrumentEditor::showEnvDecay()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    sprintf(
-      labelText[4], "%.3fs", (float)(editorInstrument->envelope[envSlot].decay / 1000.0f));
+    const uint32_t decay = editorInstrument->getEnv(envSlot).decay;
+    sprintf(labelText[4], "%.3fs", (float)(decay / 1000.0f));
 
     if (editorInstrument->isAutomationDestEnabled(selectedEnvelope))
     {
@@ -1397,24 +1412,17 @@ void cInstrumentEditor::showEnvDecay()
 
     display.setControlValue(
       barControl[4],
-      (editorInstrument->envelope[envSlot].decay > ENVELOPE_MICRO_RANGE)
-        ? map<int>(editorInstrument->envelope[envSlot].decay,
-                   ENVELOPE_MICRO_RANGE,
-                   DECAY_MAX,
-                   50,
-                   100)
-        : map<int>(
-            editorInstrument->envelope[envSlot].decay, 0, ENVELOPE_MICRO_RANGE, 0, 50));
+      (decay > ENVELOPE_MICRO_RANGE)
+        ? map<int>(decay, ENVELOPE_MICRO_RANGE, DECAY_MAX, 50, 100)
+        : map<int>(decay, 0, ENVELOPE_MICRO_RANGE, 0, 50));
     display.refreshControl(barControl[4]);
 }
 
 void cInstrumentEditor::showEnvSustain()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    snprintf(labelText[5],
-             sizeof(labelText[5]),
-             "%.0f",
-             (float)(editorInstrument->envelope[envSlot].sustain * 100));
+    const float sustain = editorInstrument->getEnv(envSlot).sustain;
+    snprintf(labelText[5], sizeof(labelText[5]), "%.0f", (float)(sustain * 100));
 
     if (editorInstrument->isAutomationDestEnabled(selectedEnvelope))
     {
@@ -1430,17 +1438,15 @@ void cInstrumentEditor::showEnvSustain()
     display.setControlText2(label[5], labelText[5]);
     display.refreshControl(label[5]);
 
-    display.setControlValue(barControl[5],
-                            (editorInstrument->envelope[envSlot].sustain * 100));
+    display.setControlValue(barControl[5], (sustain * 100));
     display.refreshControl(barControl[5]);
 }
 
 void cInstrumentEditor::showEnvRelease()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    sprintf(labelText[6],
-            "%.3fs",
-            (float)(editorInstrument->envelope[envSlot].release / 1000.0f));
+    const uint32_t release = editorInstrument->getEnv(envSlot).release;
+    sprintf(labelText[6], "%.3fs", (float)(release / 1000.0f));
 
     if (editorInstrument->isAutomationDestEnabled(selectedEnvelope))
     {
@@ -1458,24 +1464,17 @@ void cInstrumentEditor::showEnvRelease()
 
     display.setControlValue(
       barControl[6],
-      (editorInstrument->envelope[envSlot].release > ENVELOPE_MICRO_RANGE)
-        ? map<int>(editorInstrument->envelope[envSlot].release,
-                   ENVELOPE_MICRO_RANGE,
-                   RELEASE_MAX,
-                   50,
-                   100)
-        : map<int>(
-            editorInstrument->envelope[envSlot].release, 0, ENVELOPE_MICRO_RANGE, 0, 50));
+      (release > ENVELOPE_MICRO_RANGE)
+        ? map<int>(release, ENVELOPE_MICRO_RANGE, RELEASE_MAX, 50, 100)
+        : map<int>(release, 0, ENVELOPE_MICRO_RANGE, 0, 50));
     display.refreshControl(barControl[6]);
 }
 
 void cInstrumentEditor::showEnvAmount()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    snprintf(labelText[7],
-             sizeof(labelText[7]),
-             "%.0f",
-             (float)(editorInstrument->envelope[envSlot].amount * 100));
+    const float amount = editorInstrument->getEnv(envSlot).amount;
+    snprintf(labelText[7], sizeof(labelText[7]), "%.0f", (float)(amount * 100));
 
     if (editorInstrument->isAutomationDestEnabled(selectedEnvelope))
     {
@@ -1491,19 +1490,21 @@ void cInstrumentEditor::showEnvAmount()
     display.setControlText2(label[7], labelText[7]);
     display.refreshControl(label[7]);
 
-    display.setControlValue(barControl[7],
-                            (editorInstrument->envelope[envSlot].amount * 100));
+    display.setControlValue(barControl[7], (amount * 100));
     display.refreshControl(barControl[7]);
 }
 
 void cInstrumentEditor::showLfoShape()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    uint8_t shape = editorInstrument->lfo[envSlot].shape;
+    uint8_t shape = editorInstrument->getLfo(envSlot).shape;
     if (shape >= lfoShapeCount)
     {
         shape = 0;
-        editorInstrument->lfo[envSlot].shape = 0;
+        if (envSlot != envMod2 || editorInstrument->isMod2Available())
+        {
+            editorInstrument->mutLfo(envSlot).shape = 0;
+        }
     }
     display.setControlText2(label[3], lfoShapeLabels[shape]);
     display.refreshControl(label[3]);
@@ -1514,12 +1515,15 @@ void cInstrumentEditor::showLfoShape()
 void cInstrumentEditor::showLfoSpeed()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    uint8_t speed = editorInstrument->lfo[envSlot].speed;
+    uint8_t speed = editorInstrument->getLfo(envSlot).speed;
     uint8_t maxSpeed = (envSlot == envAmp) ? CONSTRAIN_SPEED_AMP_ENVELOPE : CONSTRAIN_SPEED_OTHER_ENVELOPE;
     if (speed > maxSpeed)
     {
         speed = 0;
-        editorInstrument->lfo[envSlot].speed = 0;
+        if (envSlot != envMod2 || editorInstrument->isMod2Available())
+        {
+            editorInstrument->mutLfo(envSlot).speed = 0;
+        }
     }
     uint8_t selectedLabel =
       (envSlot == envAmp)
@@ -1538,15 +1542,13 @@ void cInstrumentEditor::showLfoSpeed()
 void cInstrumentEditor::showLfoAmount()
 {
     const uint8_t envSlot = automationDestToEnvSlot(selectedEnvelope);
-    uint8_t col = (editorInstrument->envelope[envSlot].loop == 3) ? 7 : 5;
-    snprintf(labelText[col],
-             sizeof(labelText[col]),
-             "%.0f",
-             (float)(editorInstrument->lfo[envSlot].amount * 100));
+    uint8_t col = (editorInstrument->getEnv(envSlot).loop == 3) ? 7 : 5;
+    const float amount = editorInstrument->getLfo(envSlot).amount;
+    snprintf(labelText[col], sizeof(labelText[col]), "%.0f", (float)(amount * 100));
     display.setControlText2(label[col], labelText[col]);
     display.refreshControl(label[col]);
 
-    display.setControlValue(barControl[col], (editorInstrument->lfo[envSlot].amount * 100));
+    display.setControlValue(barControl[col], (amount * 100));
     display.refreshControl(barControl[col]);
 }
 

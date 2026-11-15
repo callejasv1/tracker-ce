@@ -13,6 +13,7 @@ class AudioVoice
         kGranularPosition,
         kPanning,
         kFinetune,
+        kMod2,
         kEnvelopeGeneratorCount
     };
 

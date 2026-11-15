@@ -56,13 +56,11 @@ uint8_t playerEngine ::noteOn(uint8_t instr_idx, int8_t note, int8_t _velocity)
     {
         if (mtProject.instrument[instr_idx].isEnvEnabled(i))
         {
-            bool isRandom = (mtProject.instrument[instr_idx].envelope[i].loop == 1) &&
-                            (mtProject.instrument[instr_idx].lfo[i].shape == lfoShapeRandom);
+            const auto& envCfg = mtProject.instrument[instr_idx].getEnv(i);
+            const auto& lfoCfg = mtProject.instrument[instr_idx].getLfo(i);
+            bool isRandom = (envCfg.loop == 1) && (lfoCfg.shape == lfoShapeRandom);
             envelopePtr[i]->setIsRandom(isRandom);
-            envelopePtr[i]->setWavetableParams(
-              mtProject.instrument[instr_idx].lfo[i].shape,
-              mtProject.instrument[instr_idx].lfo[i].wtBend,
-              mtProject.instrument[instr_idx].lfo[i].wtSust);
+            envelopePtr[i]->setWavetableParams(lfoCfg.shape, lfoCfg.wtBend, lfoCfg.wtSust);
             envelopePtr[i]->start();
         }
     }
@@ -194,17 +192,15 @@ AUDIO_CORE_RAM uint8_t playerEngine ::noteOn(uint8_t instr_idx,
     {
         if (isActiveEnvelope(i))
         {
-            bool isRandom = (mtProject.instrument[instr_idx].envelope[i].loop == 1) &&
-                            (mtProject.instrument[instr_idx].lfo[i].shape == lfoShapeRandom);
+            const auto& envCfg = mtProject.instrument[instr_idx].getEnv(i);
+            const auto& lfoCfg = mtProject.instrument[instr_idx].getLfo(i);
+            bool isRandom = (envCfg.loop == 1) && (lfoCfg.shape == lfoShapeRandom);
             envelopePtr[i]->setIsRandom(isRandom);
             if (i != envCutoff ||
                 (!trackControlParameter[(int)controlType::sequencerMode][(int)parameterList::filterAttack] &&
                  !trackControlParameter[(int)controlType::sequencerMode2][(int)parameterList::filterAttack]))
             {
-                envelopePtr[i]->setWavetableParams(
-                  mtProject.instrument[instr_idx].lfo[i].shape,
-                  mtProject.instrument[instr_idx].lfo[i].wtBend,
-                  mtProject.instrument[instr_idx].lfo[i].wtSust);
+                envelopePtr[i]->setWavetableParams(lfoCfg.shape, lfoCfg.wtBend, lfoCfg.wtSust);
             }
             envelopePtr[i]->start();
             setSyncParamsLFO(i);
@@ -250,11 +246,8 @@ AUDIO_CORE_RAM void playerEngine::noteOffFade()
 
     for (uint8_t i = envPan; i < ACTIVE_ENVELOPES; i++)
     {
-        uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[i].loop;
-        if ((curLoop == 0 || curLoop == 2) &&
-            (!trackControlParameter[(int)controlType::sequencerMode][i]) &&
-            (!trackControlParameter[(int)controlType::sequencerMode2][i]) &&
-            (!trackControlParameter[(int)controlType::performanceMode][i]))
+        uint8_t curLoop = mtProject.instrument[currentInstrument_idx].getEnv(i).loop;
+        if ((curLoop == 0 || curLoop == 2) && !isPerfOrSeqModActive(i))
         {
             envelopePtr[i]->stop();
         }
@@ -319,11 +312,8 @@ AUDIO_CORE_RAM void playerEngine::noteOffOrdinary()
 
         for (uint8_t i = envPan; i < ACTIVE_ENVELOPES; i++)
         {
-            uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[i].loop;
-            if ((curLoop == 0 || curLoop == 2) &&
-                (!trackControlParameter[(int)controlType::sequencerMode][i]) &&
-                (!trackControlParameter[(int)controlType::sequencerMode2][i]) &&
-                (!trackControlParameter[(int)controlType::performanceMode][i]))
+            uint8_t curLoop = mtProject.instrument[currentInstrument_idx].getEnv(i).loop;
+            if ((curLoop == 0 || curLoop == 2) && !isPerfOrSeqModActive(i))
             {
                 envelopePtr[i]->stop();
             }
@@ -337,15 +327,10 @@ AUDIO_CORE_RAM void playerEngine::noteOffOrdinary()
             onEndDisplay = true;
         for (uint8_t i = envPan; i < ACTIVE_ENVELOPES; i++)
         {
-            uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[i].loop;
+            uint8_t curLoop = mtProject.instrument[currentInstrument_idx].getEnv(i).loop;
             if ((mtProject.instrument[currentInstrument_idx].isEnvEnabled(i) &&
                  (curLoop == 1 || curLoop == 3)) ||
-                (trackControlParameter[(int)controlType::sequencerMode]
-                                      [envelopesControlValue[i]]) ||
-                (trackControlParameter[(int)controlType::sequencerMode2]
-                                      [envelopesControlValue[i]]) ||
-                (trackControlParameter[(int)controlType::performanceMode]
-                                      [envelopesControlValue[i]]))
+                isPerfOrSeqModActive(i))
             {
                 currentEnvelopeModification[i] = 0;
             }
@@ -363,15 +348,10 @@ AUDIO_CORE_RAM void playerEngine::noteOffOrdinary()
                 onEndDisplay = true;
             for (uint8_t i = envPan; i < ACTIVE_ENVELOPES; i++)
             {
-                uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[i].loop;
+                uint8_t curLoop = mtProject.instrument[currentInstrument_idx].getEnv(i).loop;
                 if ((mtProject.instrument[currentInstrument_idx].isEnvEnabled(i) &&
                      (curLoop == 1 || curLoop == 3)) ||
-                    (trackControlParameter[(int)controlType::sequencerMode]
-                                          [envelopesControlValue[i]]) ||
-                    (trackControlParameter[(int)controlType::sequencerMode2]
-                                          [envelopesControlValue[i]]) ||
-                    (trackControlParameter[(int)controlType::performanceMode]
-                                          [envelopesControlValue[i]]))
+                    isPerfOrSeqModActive(i))
                 {
                     currentEnvelopeModification[i] = 0;
                 }
@@ -412,6 +392,10 @@ AUDIO_CORE_RAM void playerEngine::handleInitNoteOnAllEnvelopes()
     else if (mtProject.instrument[currentInstrument_idx].modDestination != modDestOff)
     {
         handleInitNoteOnEnvelope(envMod);
+    }
+    if (mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod2))
+    {
+        handleInitNoteOnEnvelope(envMod2);
     }
     handleInitNoteOnEnvelope(envPan);
     handleInitNoteOnEnvelope(envFinetune);
@@ -557,14 +541,17 @@ void playerEngine::handleInitNoteOnEnvelope(uint8_t n)
     else
     {
         currentEnvelopeModification[n] = 0;
-        if (mtProject.instrument[currentInstrument_idx].isEnvEnabled(n))
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        if (instr.isEnvEnabled(n))
         {
-            uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[n].loop;
+            const auto& envCfg = instr.getEnv(n);
+            const auto& lfoCfg = instr.getLfo(n);
+            uint8_t curLoop = envCfg.loop;
             if (curLoop == 1 || curLoop == 3)
             {
                 calcLfoBasedEnvelope(&lfoBasedEnvelope[n],
-                                     &mtProject.instrument[currentInstrument_idx].lfo[n],
-                                     mtProject.instrument[currentInstrument_idx].lfo[n].speed,
+                                     const_cast<strInstrument::strEnvBasedLfo*>(&lfoCfg),
+                                     lfoCfg.speed,
                                      0,
                                      curLoop);
                 initEnvelopesParameters(n, &lfoBasedEnvelope[n]);
@@ -572,8 +559,7 @@ void playerEngine::handleInitNoteOnEnvelope(uint8_t n)
             }
             else
             {
-                initEnvelopesParameters(n,
-                                        &mtProject.instrument[currentInstrument_idx].envelope[n]);
+                initEnvelopesParameters(n, const_cast<envelopeGenerator::strEnv*>(&envCfg));
             }
         }
     }
@@ -587,9 +573,7 @@ void playerEngine::handleInitFxNoteOnEnvelope(uint8_t n)
     }
     else
     {
-        if ((!trackControlParameter[(int)controlType::sequencerMode][envelopesControlValue[n]]) &&
-            (!trackControlParameter[(int)controlType::sequencerMode2][envelopesControlValue[n]]) &&
-            (!trackControlParameter[(int)controlType::performanceMode][envelopesControlValue[n]]))
+        if (!isPerfOrSeqModActive(n))
         {
             handleInitNoteOnEnvelope(n);
         }
@@ -613,10 +597,10 @@ void playerEngine::handleInitFxNoteOnEnvelope(uint8_t n)
 
         if (mtProject.instrument[currentInstrument_idx].isEnvEnabled(n))
         {
-            uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[n].loop;
+            uint8_t curLoop = mtProject.instrument[currentInstrument_idx].getEnv(n).loop;
             if (curLoop == 1 || curLoop == 3)
             {
-                if (trackControlParameter[(int)controlType::performanceMode][n])
+                if (n < envMax && trackControlParameter[(int)controlType::performanceMode][n])
                 {
                     switch (n)
                     {
@@ -704,6 +688,10 @@ AUDIO_CORE_RAM void playerEngine::handleInitFxNoteOnAllEnvelopes()
     else if (mtProject.instrument[currentInstrument_idx].modDestination != modDestOff)
     {
         handleInitFxNoteOnEnvelope(envMod);
+    }
+    if (mtProject.instrument[currentInstrument_idx].isEnvEnabled(envMod2))
+    {
+        handleInitFxNoteOnEnvelope(envMod2);
     }
     handleInitFxNoteOnEnvelope(envPan);
     handleInitFxNoteOnEnvelope(envFinetune);

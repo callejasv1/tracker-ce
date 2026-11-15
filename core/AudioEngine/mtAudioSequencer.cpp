@@ -2201,20 +2201,15 @@ void playerEngine::initEnvelopesParameters(uint8_t n, envelopeGenerator::strEnv*
     else
     {
         envelopePtr[n]->init(env);
-        envelopePtr[n]->setWavetableParams(
-          mtProject.instrument[currentInstrument_idx].lfo[n].shape,
-          mtProject.instrument[currentInstrument_idx].lfo[n].wtBend,
-          mtProject.instrument[currentInstrument_idx].lfo[n].wtSust);
+        const auto& lfoCfg = mtProject.instrument[currentInstrument_idx].getLfo(n);
+        envelopePtr[n]->setWavetableParams(lfoCfg.shape, lfoCfg.wtBend, lfoCfg.wtSust);
     }
 }
 
 AUDIO_CORE_RAM bool playerEngine::isActiveEnvelope(uint8_t type)
 {
-    return (
-      (mtProject.instrument[currentInstrument_idx].isEnvEnabled(type)) ||
-      (trackControlParameter[(int)controlType::performanceMode][envelopesControlValue[type]]) ||
-      (trackControlParameter[(int)controlType::sequencerMode][envelopesControlValue[type]]) ||
-      (trackControlParameter[(int)controlType::sequencerMode2][envelopesControlValue[type]]));
+    return mtProject.instrument[currentInstrument_idx].isEnvEnabled(type) ||
+           isPerfOrSeqModActive(type);
 }
 
 void playerEngine::setSyncParamsLFO(uint8_t type)
@@ -2225,17 +2220,16 @@ void playerEngine::setSyncParamsLFO(uint8_t type)
     }
     else
     {
-        uint8_t curLoop = mtProject.instrument[currentInstrument_idx].envelope[type].loop;
-        if ((curLoop == 1 || curLoop == 3) ||
-            (trackControlParameter[(int)controlType::performanceMode]
-                                  [envelopesControlValue[type]]) ||
-            (trackControlParameter[(int)controlType::sequencerMode][envelopesControlValue[type]]) ||
-            (trackControlParameter[(int)controlType::sequencerMode2][envelopesControlValue[type]]))
+        const auto& instr = mtProject.instrument[currentInstrument_idx];
+        const auto& envCfg = instr.getEnv(type);
+        const auto& lfoCfg = instr.getLfo(type);
+        uint8_t curLoop = envCfg.loop;
+        if ((curLoop == 1 || curLoop == 3) || isPerfOrSeqModActive(type))
         {
+            uint8_t localRate = lfoCfg.speed;
 
-            uint8_t localRate = mtProject.instrument[currentInstrument_idx].lfo[type].speed;
-
-            if (trackControlParameter[(int)controlType::performanceMode]
+            if (type < envMax &&
+                trackControlParameter[(int)controlType::performanceMode]
                                      [envelopesControlValue[type]])
             {
                 switch (type)
@@ -2251,10 +2245,11 @@ void playerEngine::setSyncParamsLFO(uint8_t type)
                     case envFinetune: localRate = currentPerformanceValues.lfoFinetuneRate; break;
                 }
             }
-            else if ((trackControlParameter[(int)controlType::sequencerMode]
-                                           [envelopesControlValue[type]]) ||
-                     (trackControlParameter[(int)controlType::sequencerMode2]
-                                           [envelopesControlValue[type]]))
+            else if (type < envMax &&
+                     ((trackControlParameter[(int)controlType::sequencerMode]
+                                            [envelopesControlValue[type]]) ||
+                      (trackControlParameter[(int)controlType::sequencerMode2]
+                                            [envelopesControlValue[type]])))
             {
                 switch (type)
                 {
@@ -2268,10 +2263,7 @@ void playerEngine::setSyncParamsLFO(uint8_t type)
 
             envelopePtr[type]->setSyncRate(tempoSyncRatesOthers[(localRate >= ENVELOPE_SPEED_OTHER_COUNT) ? 0 : localRate]);
             envelopePtr[type]->setSyncStartStep(sequencer.getActualPos());
-            envelopePtr[type]->setWavetableParams(
-              mtProject.instrument[currentInstrument_idx].lfo[type].shape,
-              mtProject.instrument[currentInstrument_idx].lfo[type].wtBend,
-              mtProject.instrument[currentInstrument_idx].lfo[type].wtSust);
+            envelopePtr[type]->setWavetableParams(lfoCfg.shape, lfoCfg.wtBend, lfoCfg.wtSust);
 
             /*			Magiczne liczby:
                         2 - attack,
@@ -2280,7 +2272,7 @@ void playerEngine::setSyncParamsLFO(uint8_t type)
                         6 - release
             */
 
-            switch (mtProject.instrument[currentInstrument_idx].lfo[type].shape)
+            switch (lfoCfg.shape)
             {
                 case (int)lfoShapeType::lfoShapeSaw:
                     envelopePtr[type]->setPhaseNumbers(2, -1);

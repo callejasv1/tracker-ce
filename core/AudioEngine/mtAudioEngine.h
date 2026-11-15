@@ -24,7 +24,7 @@ constexpr uint8_t MUTE_ENABLE = 1;
 constexpr float AMP_MUTED = 0.0f;
 constexpr uint8_t MOST_SIGNIFICANT_FX = 0;
 constexpr uint8_t LEAST_SIGNIFICANT_FX = 1;
-constexpr uint8_t ACTIVE_ENVELOPES = envMax;
+constexpr uint8_t ACTIVE_ENVELOPES = envEngineMax;
 constexpr uint16_t RELEASE_NOTE_ON_VAL = 1;
 constexpr uint8_t OVERDRIVE_DISABLED = 0;
 }
@@ -347,8 +347,14 @@ class playerEngine
 
     uint8_t currentInstrument_idx;
 
-    const uint32_t envTargetRefreshMask[envMax] = {
-        0, PANNING_MASK, CUTOFF_MASK, WT_POS_SEND_MASK, GRANULAR_POS_SEND_MASK, FINETUNE_MASK
+    const uint32_t envTargetRefreshMask[envEngineMax] = {
+        0,
+        PANNING_MASK,
+        CUTOFF_MASK,
+        WT_POS_SEND_MASK,
+        GRANULAR_POS_SEND_MASK,
+        FINETUNE_MASK,
+        0
     };
     const uint8_t envelopesControlValue[envMax] = {
         (uint8_t)parameterList::lfoAmp,
@@ -523,7 +529,7 @@ class playerEngine
         int8_t overdrive;
     } performanceMod;
 
-    float currentEnvelopeModification[envMax];
+    float currentEnvelopeModification[envEngineMax];
 
     uint8_t trackControlParameter[(int)controlType::controlTypeLength]
                                  [(int)parameterList::parameterListLength];
@@ -596,7 +602,7 @@ class playerEngine
     std::vector<AudioBitDepth*> bitDepthPtr;
     std::vector<AudioAnalyzeRMS*> rmsPtr;
 
-    envelopeGenerator* envelopePtr[envMax];
+    envelopeGenerator* envelopePtr[envEngineMax];
     uint8_t nChannel;
     uint8_t lastSeqFx[2];
     uint8_t lastSeqVal[2];
@@ -615,7 +621,7 @@ class playerEngine
     float currentSeqTempo = 0;
     float lastSeqTempo = 0;
 
-    envelopeGenerator::strEnv lfoBasedEnvelope[envMax];
+    envelopeGenerator::strEnv lfoBasedEnvelope[envEngineMax];
     const envelopeGenerator::strEnv passEnvelope = { .amount = 1.0,
                                                      .delay = 0,
                                                      .attack = 0,
@@ -641,6 +647,33 @@ class playerEngine
     void setSyncParamsLFO(uint8_t type);
     void setSyncParamsAmpLFO();
     bool isActiveEnvelope(uint8_t type);
+    inline bool isPerfOrSeqModActive(uint8_t type) const
+    {
+        if (type >= envMax)
+        {
+            return false;
+        }
+        const uint8_t ctrl = envelopesControlValue[type];
+        return (trackControlParameter[(int)controlType::sequencerMode][ctrl] != 0) ||
+               (trackControlParameter[(int)controlType::sequencerMode2][ctrl] != 0) ||
+               (trackControlParameter[(int)controlType::performanceMode][ctrl] != 0);
+    }
+    inline float getActiveModDelta(const strInstrument& instr, uint8_t targetDest) const
+    {
+        float mod = 0.0f;
+        if (instr.playMode != playModeGranular &&
+            instr.getModDestination(0) == targetDest &&
+            instr.isEnvEnabled(envMod))
+        {
+            mod += currentEnvelopeModification[envMod];
+        }
+        if (instr.getModDestination(1) == targetDest &&
+            instr.isEnvEnabled(envMod2))
+        {
+            mod += currentEnvelopeModification[envMod2];
+        }
+        return mod;
+    }
 
     //**********************NOTE ON/OFF HANDLERS
     //*****note on fx
@@ -694,6 +727,7 @@ class playerEngine
     inline void handleUpdateRefreshCutoffLFO();
     inline void handleUpdateRefreshWtPosLFO();
     inline void handleUpdateRefreshGranPosLFO();
+    inline void handleUpdateRefreshMod2LFO();
     inline void handleUpdateRefreshPanningLFO();
     inline void handleUpdateRefreshFinetuneLFO();
 

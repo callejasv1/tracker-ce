@@ -124,6 +124,7 @@ class AudioPlayMemory : public AudioStream
     //*********
     //*****Synth
     void setSynthMod(int16_t val) { synthMod = val; }
+    void setSynthMod2(int16_t val) { synthMod2 = val; }
     void setSynthPwMod(int16_t val) { synthPwMod = val; }
     //*********
     //*****************************************************************
@@ -468,6 +469,7 @@ class AudioPlayMemory : public AudioStream
     float synthRatioB = 1.0f;
     float synthRatioC = 1.0f;
     int16_t synthMod = 0;
+    int16_t synthMod2 = 0;
     int16_t synthPwMod = 0;
     bool synthOscInitialized = false;
     uint8_t lastSynthMode = 0xFF;

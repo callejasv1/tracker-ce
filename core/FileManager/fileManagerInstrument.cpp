@@ -954,6 +954,11 @@ void cFileManager::setDefaultActiveInstrument(struct strInstrument* targetInstru
         targetInstrument->lfo[i].wtBend = 0;
         targetInstrument->lfo[i].wtSust = 0;
     }
+
+    if (targetInstrument->isMod2Available())
+    {
+        targetInstrument->initMod2Default();
+    }
 }
 
 void cFileManager::checkLoopParameters(struct strInstrument* instr)
