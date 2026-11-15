@@ -8,6 +8,8 @@ Welcome to the official documentation for **Polyend Tracker Community Edition (C
 
 ## Musician & User Guides
 
+* **[New Features Manual & Screen Mockups (`docs/MANUAL.md`)](MANUAL.md)**
+  * Complete user guide for all new Polyend Tracker CE features with `800×480` screen mockups, parameter tables, and hardware controls.
 * **[Custom Themes & Fonts (`docs/custom_themes_and_fonts.md`)](custom_themes_and_fonts.md)**
   * How to install and create custom JSON color themes (`/Themes/*.json`) and custom antialiased bitmap fonts (`/Fonts/*.ptfont`) using the [Web Theme & Font Editor](https://polyend.github.io/tracker-theme-editor/) ([`polyend/tracker-theme-editor`](https://github.com/polyend/tracker-theme-editor)), plus full color key reference tables.
 * **[Wavetable Envelopes, LFOs & Step FX (`docs/wavetable_envelopes.md`)](wavetable_envelopes.md)**

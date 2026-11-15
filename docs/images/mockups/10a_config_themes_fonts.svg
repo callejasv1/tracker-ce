@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect x="0" y="0" width="800" height="480" fill="#000000" />
+  <rect x="2" y="31" width="196" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="3" y="32" width="194" height="26" fill="#222222" />
+  <text x="12" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Categories</text>
+  <text x="12" y="77" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Project Settings</text>
+  <rect x="6" y="87" width="186" height="23" fill="#323132" />
+  <text x="12" y="103" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">General</text>
+  <text x="12" y="129" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">MIDI</text>
+  <text x="12" y="155" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Metronome</text>
+  <text x="12" y="181" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Firmware</text>
+  <text x="12" y="207" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Info</text>
+  <rect x="202" y="31" width="396" height="391" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <rect x="203" y="32" width="394" height="26" fill="#222222" />
+  <text x="212" y="49" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">General Settings</text>
+  <text x="212" y="77" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Radio region</text>
+  <text x="581" y="77" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">Europe</text>
+  <text x="212" y="103" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Display brightness</text>
+  <text x="581" y="103" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">High</text>
+  <rect x="206" y="113" width="381" height="23" fill="#FFFFFF" />
+  <text x="212" y="129" fill="#000000" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Display theme</text>
+  <text x="581" y="129" fill="#000000" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">Cyber_CRT</text>
+  <text x="212" y="155" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Display font</text>
+  <text x="581" y="155" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">Pixel_Sharp</text>
+  <text x="212" y="181" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Pads brightness</text>
+  <text x="581" y="181" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">Medium</text>
+  <text x="212" y="207" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Pads preview</text>
+  <text x="581" y="207" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">Pattern</text>
+  <text x="212" y="233" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Recording options</text>
+  <text x="581" y="233" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">Micro+Vel</text>
+  <text x="212" y="259" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Recording Threshold</text>
+  <text x="581" y="259" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">-12</text>
+  <rect x="591" y="61" width="4" height="357" fill="#080808" />
+  <rect x="591" y="112" width="4" height="178" fill="#575757" />
+  <rect x="602" y="31" width="196" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="603" y="32" width="194" height="26" fill="#222222" />
+  <text x="612" y="50" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Description</text>
+  <text x="612" y="82" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Selects the color</text>
+  <text x="612" y="100" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">scheme of the UI.</text>
+  <text x="612" y="136" fill="#3FFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="start">/Themes/*.json</text>
+  <text x="612" y="154" fill="#575757" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">(up to 29 themes)</text>
+  <text x="612" y="184" fill="#3FFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="start">/Fonts/*.ptfont</text>
+  <text x="612" y="202" fill="#575757" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">(up to 30 fonts)</text>
+  <rect x="0" y="424" width="800" height="56" fill="#000000" />
+  <line x1="0" y1="424" x2="800" y2="424" stroke="#222222" stroke-width="1" />
+  <rect x="2" y="426" width="196" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="6" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">1–2</text>
+  <text x="100.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">▲  Category  ▼</text>
+  <text x="100.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">[1]       [2]</text>
+  <rect x="202" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="206" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">3</text>
+  <rect x="302" y="426" width="296" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="306" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">4–6</text>
+  <text x="450.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">▲       Item       ▼</text>
+  <text x="450.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">[4]             [6]</text>
+  <rect x="602" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="606" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">7</text>
+  <rect x="702" y="426" width="96" height="52" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <text x="706" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">8</text>
+  <text x="750.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Enter</text>
+  <rect x="0" y="0" width="800" height="28" fill="#080808" />
+  <line x1="0" y1="28" x2="800" y2="28" stroke="#222222" stroke-width="1" />
+  <text x="12" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start">Config</text>
+  <text x="788" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="end">Community Edition 1.0.0</text>
+</svg>

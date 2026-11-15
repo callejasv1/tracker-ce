@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect x="0" y="0" width="800" height="480" fill="#000000" />
+  <rect x="2" y="31" width="196" height="391" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <rect x="3" y="32" width="194" height="26" fill="#222222" />
+  <text x="12" y="49" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Destination</text>
+  <text x="12" y="77" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Volume *</text>
+  <text x="12" y="103" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Panning</text>
+  <text x="12" y="129" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Cutoff *</text>
+  <text x="12" y="155" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Resonance</text>
+  <text x="12" y="181" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">DCW A *</text>
+  <rect x="6" y="191" width="181" height="23" fill="#FFFFFF" />
+  <text x="12" y="207" fill="#000000" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">DCW B *</text>
+  <text x="12" y="233" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Osc B Pitch</text>
+  <text x="12" y="259" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Detune</text>
+  <text x="12" y="285" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Osc B Level</text>
+  <text x="12" y="311" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Sub Level</text>
+  <text x="12" y="337" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Noise Level</text>
+  <text x="12" y="363" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Finetune</text>
+  <text x="12" y="389" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Pitch</text>
+  <rect x="191" y="61" width="4" height="357" fill="#080808" />
+  <rect x="191" y="164" width="4" height="89" fill="#575757" />
+  <rect x="202" y="31" width="96" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="203" y="32" width="94" height="26" fill="#222222" />
+  <text x="212" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Type</text>
+  <text x="212" y="77" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Off</text>
+  <text x="212" y="103" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Envelope</text>
+  <text x="212" y="129" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">LFO</text>
+  <text x="212" y="155" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">WT Env</text>
+  <rect x="206" y="165" width="86" height="23" fill="#323132" />
+  <text x="212" y="181" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">WT LFO</text>
+  <rect x="302" y="31" width="496" height="138" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <line x1="314" y1="100" x2="786" y2="100" stroke="#171717" stroke-width="1" />
+  <text x="312" y="48" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">2048-pt Shape Preview (DCW B | F 021 +0/+2)</text>
+  <path d="M314.0,104.0 L316.6,102.5 L319.2,101.1 L321.9,99.8 L324.5,98.6 L327.1,97.6 L329.7,96.9 L332.4,96.4 L335.0,96.2 L337.6,96.3 L340.2,96.8 L342.8,97.6 L345.5,98.7 L348.1,100.2 L350.7,101.9 L353.3,104.0 L356.0,106.3 L358.6,108.9 L361.2,111.7 L363.8,114.6 L366.4,117.6 L369.1,120.6 L371.7,123.6 L374.3,126.6 L376.9,129.4 L379.6,132.0 L382.2,134.4 L384.8,136.5 L387.4,138.3 L390.0,139.6 L392.7,140.6 L395.3,141.1 L397.9,141.1 L400.5,140.7 L403.2,139.8 L405.8,138.4 L408.4,136.5 L411.0,134.2 L413.6,131.4 L416.3,128.3 L418.9,124.8 L421.5,121.0 L424.1,117.0 L426.8,112.8 L429.4,108.4 L432.0,104.0 L434.6,99.6 L437.2,95.2 L439.9,91.0 L442.5,87.0 L445.1,83.2 L447.7,79.7 L450.4,76.6 L453.0,73.8 L455.6,71.5 L458.2,69.6 L460.8,68.2 L463.5,67.3 L466.1,66.9 L468.7,66.9 L471.3,67.4 L474.0,68.4 L476.6,69.7 L479.2,71.5 L481.8,73.6 L484.4,76.0 L487.1,78.6 L489.7,81.4 L492.3,84.4 L494.9,87.4 L497.6,90.4 L500.2,93.4 L502.8,96.3 L505.4,99.1 L508.0,101.7 L510.7,104.0 L513.3,106.1 L515.9,107.8 L518.5,109.3 L521.2,110.4 L523.8,111.2 L526.4,111.7 L529.0,111.8 L531.6,111.6 L534.3,111.1 L536.9,110.4 L539.5,109.4 L542.1,108.2 L544.8,106.9 L547.4,105.5 L550.0,104.0 L552.6,102.5 L555.2,101.1 L557.9,99.8 L560.5,98.6 L563.1,97.6 L565.7,96.9 L568.4,96.4 L571.0,96.2 L573.6,96.3 L576.2,96.8 L578.8,97.6 L581.5,98.7 L584.1,100.2 L586.7,101.9 L589.3,104.0 L592.0,106.3 L594.6,108.9 L597.2,111.7 L599.8,114.6 L602.4,117.6 L605.1,120.6 L607.7,123.6 L610.3,126.6 L612.9,129.4 L615.6,132.0 L618.2,134.4 L620.8,136.5 L623.4,138.3 L626.0,139.6 L628.7,140.6 L631.3,141.1 L633.9,141.1 L636.5,140.7 L639.2,139.8 L641.8,138.4 L644.4,136.5 L647.0,134.2 L649.6,131.4 L652.3,128.3 L654.9,124.8 L657.5,121.0 L660.1,117.0 L662.8,112.8 L665.4,108.4 L668.0,104.0 L670.6,99.6 L673.2,95.2 L675.9,91.0 L678.5,87.0 L681.1,83.2 L683.7,79.7 L686.4,76.6 L689.0,73.8 L691.6,71.5 L694.2,69.6 L696.8,68.2 L699.5,67.3 L702.1,66.9 L704.7,66.9 L707.3,67.4 L710.0,68.4 L712.6,69.7 L715.2,71.5 L717.8,73.6 L720.4,76.0 L723.1,78.6 L725.7,81.4 L728.3,84.4 L730.9,87.4 L733.6,90.4 L736.2,93.4 L738.8,96.3 L741.4,99.1 L744.0,101.7 L746.7,104.0 L749.3,106.1 L751.9,107.8 L754.5,109.3 L757.2,110.4 L759.8,111.2 L762.4,111.7 L765.0,111.8 L767.6,111.6 L770.3,111.1 L772.9,110.4 L775.5,109.4 L778.1,108.2 L780.8,106.9 L783.4,105.5 L786.0,104.0" stroke="#3FFFFF" stroke-width="2.2" fill="none" stroke-linejoin="round" stroke-linecap="round" />
+  <rect x="302" y="173" width="96" height="249" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="350.0" y="191" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Wave</text>
+  <rect x="318" y="199" width="64" height="199" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="319" y="335" width="62" height="63" fill="#FFFFFF" />
+  <text x="350.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">F 021</text>
+  <rect x="402" y="173" width="96" height="249" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="450.0" y="191" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Speed</text>
+  <rect x="418" y="199" width="64" height="199" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="419" y="275" width="62" height="123" fill="#FFFFFF" />
+  <text x="450.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">2 steps</text>
+  <rect x="502" y="173" width="96" height="249" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="550.0" y="191" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Warp X</text>
+  <rect x="518" y="199" width="64" height="199" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="519" y="299" width="62" height="99" fill="#FFFFFF" />
+  <text x="550.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">+0</text>
+  <rect x="602" y="173" width="96" height="249" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="650.0" y="191" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Warp Y</text>
+  <rect x="618" y="199" width="64" height="199" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="619" y="271" width="62" height="127" fill="#3FFFFF" />
+  <text x="650.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">+2</text>
+  <rect x="702" y="173" width="96" height="249" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="750.0" y="191" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Amount</text>
+  <rect x="718" y="199" width="64" height="199" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="719" y="269" width="62" height="129" fill="#FFFFFF" />
+  <text x="750.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">65%</text>
+  <rect x="0" y="424" width="800" height="56" fill="#000000" />
+  <line x1="0" y1="424" x2="800" y2="424" stroke="#222222" stroke-width="1" />
+  <rect x="2" y="426" width="196" height="52" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <text x="6" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">1–2</text>
+  <text x="100.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Destination</text>
+  <rect x="202" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="206" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">3</text>
+  <text x="250.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Type</text>
+  <text x="250.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">WT LFO</text>
+  <rect x="302" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="306" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">4</text>
+  <text x="350.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Wave</text>
+  <text x="350.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">F 021</text>
+  <rect x="402" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="406" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">5</text>
+  <text x="450.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Speed</text>
+  <text x="450.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">2 steps</text>
+  <rect x="502" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="506" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">6</text>
+  <text x="550.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Warp X</text>
+  <text x="550.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">+0</text>
+  <rect x="602" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="606" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">7</text>
+  <text x="650.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Warp Y</text>
+  <text x="650.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">+2</text>
+  <rect x="702" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="706" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">8</text>
+  <text x="750.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Amount</text>
+  <text x="750.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">65%</text>
+  <rect x="0" y="0" width="800" height="28" fill="#080808" />
+  <line x1="0" y1="28" x2="800" y2="28" stroke="#222222" stroke-width="1" />
+  <text x="12" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start">Instrument Automation 2/2</text>
+  <text x="788" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="end">1. CZ PD Bass</text>
+</svg>

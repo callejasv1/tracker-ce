@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect x="0" y="0" width="800" height="480" fill="#000000" />
+  <rect x="11" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="13" y="35" width="58" height="22" fill="#171717" />
+  <text x="42" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 1</text>
+  <text x="42" y="102" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">Pat1</text>
+  <rect x="15" y="210" width="54" height="40" fill="#121212" />
+  <text x="42" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Vol</text>
+  <text x="42" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="76" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="78" y="35" width="58" height="22" fill="#171717" />
+  <text x="107" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 2</text>
+  <text x="107" y="102" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">Pat2</text>
+  <rect x="80" y="210" width="54" height="40" fill="#121212" />
+  <text x="107" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Pan</text>
+  <text x="107" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="141" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="143" y="35" width="58" height="22" fill="#171717" />
+  <text x="172" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 3</text>
+  <text x="172" y="102" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">Pat1</text>
+  <rect x="145" y="210" width="54" height="40" fill="#121212" />
+  <text x="172" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Tun</text>
+  <text x="172" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="206" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="208" y="35" width="58" height="22" fill="#171717" />
+  <text x="237" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 4</text>
+  <text x="237" y="102" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">Pat4</text>
+  <rect x="210" y="210" width="54" height="40" fill="#121212" />
+  <text x="237" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">LPF</text>
+  <text x="237" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="271" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="273" y="35" width="58" height="22" fill="#171717" />
+  <text x="302" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 5</text>
+  <text x="302" y="102" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">Pat1</text>
+  <rect x="275" y="210" width="54" height="40" fill="#121212" />
+  <text x="302" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">HPF</text>
+  <text x="302" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="336" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="338" y="35" width="58" height="22" fill="#171717" />
+  <text x="367" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 6</text>
+  <text x="367" y="102" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">Pat1</text>
+  <rect x="340" y="210" width="54" height="40" fill="#121212" />
+  <text x="367" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Bit</text>
+  <text x="367" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="401" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="403" y="35" width="58" height="22" fill="#171717" />
+  <text x="432" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 7</text>
+  <text x="432" y="102" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">Pat3</text>
+  <rect x="405" y="210" width="54" height="40" fill="#121212" />
+  <text x="432" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Ovd</text>
+  <text x="432" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="466" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="468" y="35" width="58" height="22" fill="#171717" />
+  <text x="497" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 8</text>
+  <text x="497" y="102" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">Pat2</text>
+  <rect x="470" y="210" width="54" height="40" fill="#121212" />
+  <text x="497" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Dly</text>
+  <text x="497" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="531" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="533" y="35" width="58" height="22" fill="#171717" />
+  <text x="562" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 9</text>
+  <text x="562" y="102" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="535" y="210" width="54" height="40" fill="#121212" />
+  <text x="562" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Rev</text>
+  <text x="562" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="596" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="598" y="35" width="58" height="22" fill="#171717" />
+  <text x="627" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 10</text>
+  <text x="627" y="102" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="600" y="210" width="54" height="40" fill="#121212" />
+  <text x="627" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Stp</text>
+  <text x="627" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="661" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="663" y="35" width="58" height="22" fill="#171717" />
+  <text x="692" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 11</text>
+  <text x="692" y="102" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="665" y="210" width="54" height="40" fill="#121212" />
+  <text x="692" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Rep</text>
+  <text x="692" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="726" y="31" width="62" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="728" y="35" width="58" height="22" fill="#171717" />
+  <text x="757" y="51" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="normal" text-anchor="middle">Slot 12</text>
+  <text x="757" y="102" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="12" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="730" y="210" width="54" height="40" fill="#121212" />
+  <text x="757" y="235" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Rnd</text>
+  <text x="757" y="305" fill="#373737" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">---</text>
+  <rect x="0" y="424" width="800" height="56" fill="#000000" />
+  <line x1="0" y1="424" x2="800" y2="424" stroke="#222222" stroke-width="1" />
+  <rect x="2" y="426" width="96" height="52" fill="#cd1818" stroke="#cd1818" stroke-width="1" />
+  <text x="6" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">1</text>
+  <text x="50.0" y="450" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">MIDI 1</text>
+  <text x="50.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">On</text>
+  <rect x="102" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="106" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">2</text>
+  <text x="150.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">MIDI 2</text>
+  <rect x="202" y="426" width="96" height="52" fill="#cd1818" stroke="#cd1818" stroke-width="1" />
+  <text x="206" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">3</text>
+  <text x="250.0" y="450" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">MIDI 3</text>
+  <text x="250.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">On</text>
+  <rect x="302" y="426" width="96" height="52" fill="#444344" stroke="#222222" stroke-width="1" />
+  <text x="306" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">4</text>
+  <text x="350.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">MIDI 4</text>
+  <text x="350.0" y="469" fill="#000000" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">Muted</text>
+  <rect x="402" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="406" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">5</text>
+  <text x="450.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">MIDI 5</text>
+  <rect x="502" y="426" width="96" height="52" fill="#cd1818" stroke="#cd1818" stroke-width="1" />
+  <text x="506" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">6</text>
+  <text x="550.0" y="450" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">MIDI 6</text>
+  <text x="550.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">On</text>
+  <rect x="602" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="606" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">7</text>
+  <text x="650.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">MIDI 7</text>
+  <rect x="702" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="706" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">8</text>
+  <text x="750.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">MIDI 8</text>
+  <rect x="0" y="0" width="800" height="28" fill="#080808" />
+  <line x1="0" y1="28" x2="800" y2="28" stroke="#222222" stroke-width="1" />
+  <text x="12" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start">Performance FX</text>
+  <text x="788" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="end">MIDI Tracks 9-16 (Press [Perform] to Toggle)</text>
+</svg>

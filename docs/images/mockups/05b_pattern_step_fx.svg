@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect x="0" y="0" width="800" height="480" fill="#000000" />
+  <rect x="2" y="31" width="796" height="391" fill="#080808" stroke="#222222" stroke-width="1" />
+  <line x1="10" y1="64" x2="790" y2="64" stroke="#121212" stroke-width="1" />
+  <line x1="10" y1="106" x2="790" y2="106" stroke="#121212" stroke-width="1" />
+  <line x1="10" y1="148" x2="790" y2="148" stroke="#121212" stroke-width="1" />
+  <line x1="10" y1="190" x2="790" y2="190" stroke="#121212" stroke-width="1" />
+  <line x1="10" y1="232" x2="790" y2="232" stroke="#121212" stroke-width="1" />
+  <line x1="10" y1="274" x2="790" y2="274" stroke="#121212" stroke-width="1" />
+  <line x1="10" y1="316" x2="790" y2="316" stroke="#121212" stroke-width="1" />
+  <line x1="10" y1="358" x2="790" y2="358" stroke="#121212" stroke-width="1" />
+  <line x1="10" y1="400" x2="790" y2="400" stroke="#121212" stroke-width="1" />
+  <rect x="86" y="56" width="628" height="336" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <rect x="88" y="58" width="624" height="34" fill="#FFFFFF" />
+  <text x="102" y="80" fill="#000000" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="start">Step FX Selector — New &amp; Expanded Effects (Fx1 / Fx2)</text>
+  <text x="108" y="122" fill="#bb58f1" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="13" font-weight="bold" text-anchor="start">C - Chance</text>
+  <text x="296" y="122" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">0..100% | GL | !L | 1:1..6:6 (Play N/Skip M) | S11..S66</text>
+  <rect x="98" y="148" width="604" height="38" fill="#FFFFFF" />
+  <text x="108" y="166" fill="#000000" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="13" font-weight="bold" text-anchor="start">w - WT Volume Env</text>
+  <text x="296" y="166" fill="#000000" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">XY hex: X scales Duration (0.05x..4.00x), Y = Warp X (-7..+7)</text>
+  <text x="108" y="210" fill="#3FFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="13" font-weight="bold" text-anchor="start">y - WT Filter Env</text>
+  <text x="296" y="210" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">XY hex: X scales Duration (0.05x..4.00x), Y = Warp X (-7..+7)</text>
+  <text x="108" y="254" fill="#30cb3f" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="13" font-weight="bold" text-anchor="start">z - Granular Length</text>
+  <text x="296" y="254" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">0..100%: 0-50% = 1.0-100.0 ms | 50-100% = 100.0-1000.0 ms</text>
+  <text x="108" y="298" fill="#fef749" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="13" font-weight="bold" text-anchor="start">0 - MIDI Chord</text>
+  <text x="296" y="298" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">68 Chords: 1..29 Root Voicings + 30..67 New Inversions</text>
+  <text x="108" y="342" fill="#00e8be" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="13" font-weight="bold" text-anchor="start">A - Arp (Chords)</text>
+  <text x="296" y="342" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">Shares expanded 68-voicing chord &amp; inversion table</text>
+  <rect x="0" y="424" width="800" height="56" fill="#000000" />
+  <line x1="0" y1="424" x2="800" y2="424" stroke="#222222" stroke-width="1" />
+  <rect x="2" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="6" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">1</text>
+  <text x="50.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Pattern</text>
+  <text x="50.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">1</text>
+  <rect x="102" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="106" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">2</text>
+  <text x="150.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Length</text>
+  <text x="150.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">32</text>
+  <rect x="202" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="206" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">3</text>
+  <text x="250.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Step jump</text>
+  <text x="250.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">1</text>
+  <rect x="302" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="306" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">4</text>
+  <text x="350.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Fill</text>
+  <rect x="402" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="406" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">5</text>
+  <text x="450.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Preview</text>
+  <rect x="502" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="506" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">6</text>
+  <text x="550.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Undo</text>
+  <rect x="602" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="606" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">7</text>
+  <text x="650.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Redo</text>
+  <rect x="702" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="706" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">8</text>
+  <text x="750.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">More</text>
+  <text x="750.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">•◦</text>
+  <rect x="0" y="0" width="800" height="28" fill="#080808" />
+  <line x1="0" y1="28" x2="800" y2="28" stroke="#222222" stroke-width="1" />
+  <text x="12" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start">Pattern 1   [4/32]   Tracks 1-4</text>
+  <text x="788" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="end">Step 02 | Track 2 | Fx1</text>
+</svg>

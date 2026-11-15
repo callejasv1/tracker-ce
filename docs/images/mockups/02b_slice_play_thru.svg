@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect x="0" y="0" width="800" height="480" fill="#000000" />
+  <rect x="2" y="31" width="596" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <line x1="12" y1="226" x2="588" y2="226" stroke="#222222" stroke-width="1" />
+  <text x="16" y="52" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">Slice / Beat Slice Page 2: Play Thru = On (continues past slice markers until Note Off)</text>
+  <path d="M14.0,169.4 L16.2,131.7 L18.4,139.0 L20.6,175.1 L22.8,218.8 L25.0,253.6 L27.2,271.0 L29.4,270.7 L31.6,257.2 L33.8,237.8 L36.0,219.5 L38.2,207.4 L40.4,203.9 L42.6,208.5 L44.8,218.1 L47.0,228.5 L49.2,235.7 L51.4,237.2 L53.6,233.5 L55.8,227.3 L58.0,221.8 L60.2,219.7 L62.4,221.2 L64.6,224.8 L66.8,228.2 L69.0,229.6 L71.2,228.8 L73.4,226.9 L75.6,225.0 L77.8,224.1 L80.0,224.2 L82.2,225.1 L84.4,226.0 L86.6,294.5 L88.8,318.2 L91.0,305.1 L93.2,270.3 L95.4,230.8 L97.6,199.7 L99.8,183.9 L102.0,184.3 L104.2,197.1 L106.4,215.7 L108.6,233.4 L110.8,244.7 L113.0,246.9 L115.2,240.8 L117.4,230.3 L119.6,220.3 L121.8,215.1 L124.0,216.0 L126.2,221.5 L128.4,228.0 L130.6,231.9 L132.8,231.9 L135.0,228.8 L137.2,225.1 L139.4,222.8 L141.6,222.6 L143.8,224.1 L146.0,226.0 L148.2,227.5 L150.4,228.0 L152.6,227.5 L154.8,226.7 L157.0,207.7 L159.2,155.5 L161.4,138.8 L163.6,152.9 L165.8,185.2 L168.0,221.6 L170.2,250.6 L172.4,265.5 L174.6,264.8 L176.8,251.8 L179.0,233.1 L181.2,216.0 L183.4,206.4 L185.6,206.8 L187.8,215.1 L190.0,226.4 L192.2,234.9 L194.4,237.2 L196.6,233.4 L198.8,226.7 L201.0,221.3 L203.2,219.6 L205.4,221.6 L207.6,225.3 L209.8,228.4 L212.0,229.6 L214.2,228.9 L216.4,227.1 L218.6,225.4 L220.8,224.3 L223.0,224.1 L225.2,224.7 L227.4,225.5 L229.6,248.2 L231.8,293.4 L234.0,307.5 L236.2,294.2 L238.4,263.9 L240.6,229.3 L242.8,201.6 L245.0,188.0 L247.2,190.3 L249.4,204.9 L251.6,224.2 L253.8,240.0 L256.0,246.3 L258.2,242.1 L260.4,231.4 L262.6,220.5 L264.8,214.9 L267.0,216.3 L269.2,222.3 L271.4,228.7 L273.6,232.2 L275.8,231.7 L278.0,228.6 L280.2,225.1 L282.4,222.9 L284.6,222.5 L286.8,223.7 L289.0,225.4 L291.2,226.9 L293.4,227.7 L295.6,227.7 L297.8,227.2 L300.0,268.0 L302.2,204.8 L304.4,163.1 L306.6,149.9 L308.8,162.8 L311.0,192.4 L313.2,226.3 L315.4,252.6 L317.6,263.4 L319.8,257.5 L322.0,240.2 L324.2,220.6 L326.4,207.9 L328.6,206.6 L330.8,215.0 L333.0,227.0 L335.2,235.6 L337.4,237.2 L339.6,232.7 L341.8,225.9 L344.0,220.9 L346.2,219.6 L348.4,221.6 L350.6,225.0 L352.8,228.0 L355.0,229.4 L357.2,229.1 L359.4,227.9 L361.6,226.3 L363.8,225.0 L366.0,224.4 L368.2,224.4 L370.4,224.9 L372.6,186.9 L374.8,246.4 L377.0,285.9 L379.2,297.6 L381.4,283.2 L383.6,252.2 L385.8,218.6 L388.0,195.2 L390.2,189.7 L392.4,201.0 L394.6,221.2 L396.8,239.0 L399.0,246.3 L401.2,241.7 L403.4,230.2 L405.6,219.3 L407.8,214.5 L410.0,216.7 L412.2,222.9 L414.4,229.0 L416.6,232.2 L418.8,231.8 L421.0,229.1 L423.2,225.9 L425.4,223.6 L427.6,222.7 L429.8,223.1 L432.0,224.4 L434.2,225.8 L436.4,226.9 L438.6,227.5 L440.8,227.5 L443.0,320.4 L445.2,260.2 L447.4,202.9 L449.6,166.0 L451.8,158.3 L454.0,177.2 L456.2,211.0 L458.4,243.5 L460.6,261.0 L462.8,258.6 L465.0,241.2 L467.2,220.4 L469.4,207.3 L471.6,206.9 L473.8,216.4 L476.0,228.5 L478.2,236.3 L480.4,237.1 L482.6,232.5 L484.8,226.1 L487.0,221.3 L489.2,219.7 L491.4,221.0 L493.6,223.8 L495.8,226.6 L498.0,228.5 L500.2,229.1 L502.4,228.6 L504.6,227.5 L506.8,226.2 L509.0,225.1 L511.2,224.6 L513.4,224.6 L515.6,141.5 L517.8,201.8 L520.0,257.3 L522.2,288.8 L524.4,288.6 L526.6,262.3 L528.8,225.9 L531.0,197.9 L533.2,189.7 L535.4,201.4 L537.6,222.8 L539.8,240.7 L542.0,246.7 L544.2,240.7 L546.4,228.9 L548.6,218.6 L550.8,214.4 L553.0,216.6 L555.2,222.2 L557.4,227.9 L559.6,231.4 L561.8,232.0 L564.0,230.4 L566.2,227.7 L568.4,225.2 L570.6,223.6 L572.8,223.1 L575.0,223.5 L577.2,224.6 L579.4,225.9 L581.6,226.9 L583.8,227.4 L586.0,342.0" stroke="#FFFFFF" stroke-width="1.7" fill="none" stroke-linejoin="round" stroke-linecap="round" />
+  <line x1="14" y1="84" x2="14" y2="366" stroke="#fef749" stroke-width="1.3" />
+  <text x="18" y="98" fill="#fef749" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="10" font-weight="normal" text-anchor="start">S01</text>
+  <line x1="85" y1="84" x2="85" y2="366" stroke="#fef749" stroke-width="1.3" />
+  <text x="89" y="98" fill="#fef749" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="10" font-weight="normal" text-anchor="start">S02</text>
+  <line x1="157" y1="84" x2="157" y2="366" stroke="#cd1818" stroke-width="2" />
+  <text x="161" y="98" fill="#cd1818" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="10" font-weight="normal" text-anchor="start">S03</text>
+  <line x1="228" y1="84" x2="228" y2="366" stroke="#fef749" stroke-width="1.3" />
+  <text x="232" y="98" fill="#fef749" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="10" font-weight="normal" text-anchor="start">S04</text>
+  <line x1="300" y1="84" x2="300" y2="366" stroke="#fef749" stroke-width="1.3" />
+  <text x="304" y="98" fill="#fef749" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="10" font-weight="normal" text-anchor="start">S05</text>
+  <line x1="371" y1="84" x2="371" y2="366" stroke="#fef749" stroke-width="1.3" />
+  <text x="375" y="98" fill="#fef749" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="10" font-weight="normal" text-anchor="start">S06</text>
+  <line x1="443" y1="84" x2="443" y2="366" stroke="#fef749" stroke-width="1.3" />
+  <text x="447" y="98" fill="#fef749" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="10" font-weight="normal" text-anchor="start">S07</text>
+  <line x1="514" y1="84" x2="514" y2="366" stroke="#fef749" stroke-width="1.3" />
+  <text x="518" y="98" fill="#fef749" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="10" font-weight="normal" text-anchor="start">S08</text>
+  <line x1="157" y1="382" x2="443" y2="382" stroke="#30cb3f" stroke-width="2.5" />
+  <text x="300.0" y="375" fill="#30cb3f" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Play Thru = On  ▶▶</text>
+  <rect x="602" y="31" width="196" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="603" y="32" width="194" height="26" fill="#222222" />
+  <text x="612" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Play Mode</text>
+  <text x="612" y="77" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">1-Shot</text>
+  <text x="612" y="103" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Forward Loop</text>
+  <text x="612" y="129" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Backward Loop</text>
+  <text x="612" y="155" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Pingpong Loop</text>
+  <rect x="606" y="165" width="181" height="23" fill="#323132" />
+  <text x="612" y="181" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Slice</text>
+  <text x="612" y="207" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Beat Slice</text>
+  <text x="612" y="233" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Wavetable</text>
+  <text x="612" y="259" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Granular</text>
+  <text x="612" y="285" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Synth</text>
+  <rect x="791" y="61" width="4" height="357" fill="#080808" />
+  <rect x="791" y="180" width="4" height="119" fill="#575757" />
+  <rect x="0" y="424" width="800" height="56" fill="#000000" />
+  <line x1="0" y1="424" x2="800" y2="424" stroke="#222222" stroke-width="1" />
+  <rect x="2" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="6" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">1</text>
+  <text x="50.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Slice</text>
+  <text x="50.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">Auto</text>
+  <rect x="102" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="106" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">2</text>
+  <text x="150.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Slice</text>
+  <text x="150.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">Evenly</text>
+  <rect x="202" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="206" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">3</text>
+  <text x="250.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">No of Slices</text>
+  <text x="250.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">16</text>
+  <rect x="302" y="426" width="96" height="52" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <text x="306" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">4</text>
+  <text x="350.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Play Thru</text>
+  <text x="350.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">On</text>
+  <rect x="402" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="406" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">5</text>
+  <rect x="502" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="506" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">6</text>
+  <text x="550.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">More</text>
+  <text x="550.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">◦•</text>
+  <rect x="602" y="426" width="196" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="606" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">7–8</text>
+  <text x="700.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">▲  Play Mode  ▼</text>
+  <text x="700.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">[7]       [8]</text>
+  <rect x="0" y="0" width="800" height="28" fill="#080808" />
+  <line x1="0" y1="28" x2="800" y2="28" stroke="#222222" stroke-width="1" />
+  <text x="12" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start">Sample Playback</text>
+  <text x="788" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="end">3. Amen Break.wav</text>
+</svg>

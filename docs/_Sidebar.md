@@ -4,6 +4,7 @@
 * **[Changelog](CHANGELOG)**
 
 #### User Guides
+* **[New Features Manual](MANUAL)**
 * **[Custom Themes & Fonts](custom_themes_and_fonts)**
 * **[Wavetable Envelopes & LFOs](wavetable_envelopes)**
 * **[SD Card Image Viewer](image_viewer)**

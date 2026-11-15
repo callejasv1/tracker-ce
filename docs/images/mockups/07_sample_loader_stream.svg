@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect x="0" y="0" width="800" height="480" fill="#000000" />
+  <rect x="2" y="31" width="296" height="391" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <rect x="3" y="32" width="294" height="26" fill="#222222" />
+  <text x="12" y="49" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">SD Card: /Samples/Stems</text>
+  <text x="12" y="77" fill="#fef749" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">[..]</text>
+  <text x="12" y="103" fill="#fef749" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">[Drums]</text>
+  <rect x="6" y="113" width="281" height="23" fill="#FFFFFF" />
+  <text x="12" y="129" fill="#000000" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Vocal_Stem_120bpm.wav</text>
+  <text x="281" y="129" fill="#000000" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">4.2 MB</text>
+  <text x="12" y="155" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Pad_Long_Atmosphere.wav</text>
+  <text x="281" y="155" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">2.8 MB</text>
+  <text x="12" y="181" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Bass_OneShot.wav</text>
+  <text x="281" y="181" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">180 KB</text>
+  <text x="12" y="207" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Breakbeat_140bpm.wav</text>
+  <text x="281" y="207" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">1.1 MB</text>
+  <text x="12" y="233" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Field_Rain_2m.wav</text>
+  <text x="281" y="233" fill="#777777" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="end">10.5 MB</text>
+  <rect x="291" y="61" width="4" height="357" fill="#080808" />
+  <rect x="291" y="120" width="4" height="178" fill="#575757" />
+  <rect x="302" y="31" width="296" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="303" y="32" width="294" height="26" fill="#222222" />
+  <text x="312" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Instruments (01-48)</text>
+  <text x="312" y="77" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">01. Kick_909.wav</text>
+  <text x="312" y="103" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">02. Snare_Tight.wav</text>
+  <rect x="306" y="113" width="281" height="23" fill="#323132" />
+  <text x="312" y="129" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">03. Vocal_Stem_120</text>
+  <text x="581" y="129" fill="#00A4B3" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="bold" text-anchor="end">[S]</text>
+  <text x="312" y="155" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">04. Synth Bass</text>
+  <text x="312" y="181" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">05. Field_Rain_2m</text>
+  <text x="581" y="181" fill="#3FFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="bold" text-anchor="end">[S]</text>
+  <text x="312" y="207" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">06. (empty)</text>
+  <text x="312" y="233" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">07. (empty)</text>
+  <rect x="591" y="61" width="4" height="357" fill="#080808" />
+  <rect x="591" y="120" width="4" height="178" fill="#575757" />
+  <rect x="602" y="31" width="96" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="650.0" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Preview Vol</text>
+  <rect x="618" y="57" width="64" height="341" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="619" y="167" width="62" height="231" fill="#FFFFFF" />
+  <text x="650.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">-3.50 dB</text>
+  <rect x="702" y="31" width="96" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="750.0" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Memory</text>
+  <rect x="718" y="57" width="64" height="341" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="719" y="255" width="62" height="143" fill="#30cb3f" />
+  <text x="750.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">42%</text>
+  <rect x="0" y="424" width="800" height="56" fill="#000000" />
+  <line x1="0" y1="424" x2="800" y2="424" stroke="#222222" stroke-width="1" />
+  <rect x="2" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="6" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">1</text>
+  <text x="50.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Add*</text>
+  <text x="50.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">Shift:Empty</text>
+  <rect x="102" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="106" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">2</text>
+  <text x="150.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Add next</text>
+  <rect x="202" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="206" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">3</text>
+  <text x="250.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Preview</text>
+  <rect x="302" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="306" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">4</text>
+  <text x="350.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Rename</text>
+  <rect x="402" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="406" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">5</text>
+  <text x="450.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Import</text>
+  <rect x="502" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="506" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">6</text>
+  <text x="550.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Delete</text>
+  <text x="550.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">unused</text>
+  <rect x="602" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="606" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">7</text>
+  <text x="650.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Preview Vol</text>
+  <text x="650.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">-3.50 dB</text>
+  <rect x="702" y="426" width="96" height="52" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <text x="706" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">8</text>
+  <text x="750.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Mem: Auto*</text>
+  <text x="750.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">42%</text>
+  <rect x="0" y="0" width="800" height="28" fill="#080808" />
+  <line x1="0" y1="28" x2="800" y2="28" stroke="#222222" stroke-width="1" />
+  <text x="12" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start">Sample Loader</text>
+  <text x="788" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="end">1. Kick_909.wav</text>
+</svg>

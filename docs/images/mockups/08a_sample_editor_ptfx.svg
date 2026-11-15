@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <rect x="0" y="0" width="800" height="480" fill="#000000" />
+  <rect x="2" y="31" width="96" height="391" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <text x="50.0" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Attack</text>
+  <rect x="18" y="57" width="64" height="341" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="19" y="153" width="62" height="245" fill="#30cb3f" />
+  <text x="50.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">+45%</text>
+  <rect x="102" y="31" width="96" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="150.0" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle">Sustain</text>
+  <rect x="118" y="57" width="64" height="341" fill="#080808" stroke="#222222" stroke-width="1" />
+  <rect x="119" y="269" width="62" height="129" fill="#D67022" />
+  <text x="150.0" y="414" fill="#FFFFFF" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="11" font-weight="normal" text-anchor="middle">-25%</text>
+  <rect x="202" y="31" width="96" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="250" y="224" fill="#444344" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle">Param 3</text>
+  <rect x="302" y="31" width="96" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="350" y="224" fill="#444344" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="middle">Param 4</text>
+  <rect x="402" y="31" width="196" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <line x1="410" y1="226" x2="590" y2="226" stroke="#222222" stroke-width="1" />
+  <text x="412" y="50" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="normal" text-anchor="start">Selection Preview</text>
+  <path d="M412.0,226.0 L413.5,174.8 L414.9,138.7 L416.4,125.5 L417.9,137.0 L419.3,169.1 L420.8,213.0 L422.3,257.5 L423.7,291.9 L425.2,308.7 L426.7,304.8 L428.1,282.3 L429.6,247.7 L431.1,209.8 L432.5,178.0 L434.0,159.4 L435.5,157.8 L436.9,172.5 L438.4,199.2 L439.9,230.7 L441.3,259.4 L442.8,278.4 L444.3,283.9 L445.7,275.2 L447.2,255.3 L448.7,229.5 L450.1,204.3 L451.6,185.8 L453.1,177.8 L454.5,181.9 L456.0,196.2 L457.5,216.8 L458.9,238.5 L460.4,255.9 L461.9,265.2 L463.3,264.7 L464.8,254.9 L466.3,238.8 L467.7,220.6 L469.2,204.6 L470.7,194.7 L472.1,192.8 L473.6,199.0 L475.1,211.2 L476.5,226.3 L478.0,240.4 L479.5,250.3 L480.9,253.9 L482.4,250.6 L483.9,241.6 L485.3,229.4 L486.8,217.1 L488.3,207.6 L489.7,203.0 L491.2,204.2 L492.7,210.5 L494.1,220.2 L495.6,230.7 L497.1,239.4 L498.5,244.5 L500.0,244.9 L501.5,240.7 L502.9,233.3 L504.4,224.5 L505.9,216.6 L507.3,211.4 L508.8,210.0 L510.3,212.4 L511.7,218.0 L513.2,225.2 L514.7,232.1 L516.1,237.2 L517.6,239.4 L519.1,238.2 L520.5,234.2 L522.0,228.4 L523.5,222.4 L524.9,217.6 L526.4,215.1 L527.9,215.3 L529.3,218.1 L530.8,222.5 L532.3,227.6 L533.7,232.0 L535.2,234.7 L536.7,235.2 L538.1,233.4 L539.6,230.0 L541.1,225.9 L542.5,221.9 L544.0,219.2 L545.5,218.3 L546.9,219.2 L548.4,221.7 L549.9,225.1 L551.3,228.5 L552.8,231.1 L554.3,232.4 L555.7,232.0 L557.2,230.2 L558.7,227.6 L560.1,224.7 L561.6,222.2 L563.1,220.9 L564.5,220.8 L566.0,221.9 L567.5,224.0 L568.9,226.5 L570.4,228.6 L571.9,230.1 L573.3,230.4 L574.8,229.7 L576.3,228.2 L577.7,226.2 L579.2,224.3 L580.7,222.9 L582.1,222.3 L583.6,222.6 L585.1,223.8 L586.5,225.4 L588.0,227.0" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round" />
+  <rect x="602" y="31" width="196" height="391" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <rect x="603" y="32" width="194" height="26" fill="#222222" />
+  <text x="612" y="49" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Effect List (.ptfx)</text>
+  <text x="612" y="77" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Reverse</text>
+  <text x="612" y="103" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Normalize</text>
+  <text x="612" y="129" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Fade In / Out</text>
+  <rect x="606" y="139" width="181" height="23" fill="#323132" />
+  <text x="612" y="155" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="start">Transient Shaper</text>
+  <text x="612" y="181" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Analog Kick Gen</text>
+  <text x="612" y="207" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Chiptune Voice Gen</text>
+  <text x="612" y="233" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Multi-Mode Filter</text>
+  <text x="612" y="259" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="start">Stereo Delay</text>
+  <rect x="791" y="61" width="4" height="357" fill="#080808" />
+  <rect x="791" y="137" width="4" height="178" fill="#575757" />
+  <rect x="0" y="424" width="800" height="56" fill="#000000" />
+  <line x1="0" y1="424" x2="800" y2="424" stroke="#222222" stroke-width="1" />
+  <rect x="2" y="426" width="96" height="52" fill="#0A0A0A" stroke="#cd1818" stroke-width="2" />
+  <text x="6" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">1</text>
+  <text x="50.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Attack</text>
+  <text x="50.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">+45%</text>
+  <rect x="102" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="106" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">2</text>
+  <text x="150.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Sustain</text>
+  <text x="150.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">-25%</text>
+  <rect x="202" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="206" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">3</text>
+  <text x="250.0" y="450" fill="#373737" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Param 3</text>
+  <text x="250.0" y="469" fill="#575757" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">--</text>
+  <rect x="302" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="306" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">4</text>
+  <text x="350.0" y="450" fill="#373737" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Param 4</text>
+  <text x="350.0" y="469" fill="#575757" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">--</text>
+  <rect x="402" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="406" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">5</text>
+  <text x="450.0" y="450" fill="#777777" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">More</text>
+  <text x="450.0" y="469" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="normal" text-anchor="middle">•◦</text>
+  <rect x="502" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="506" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">6</text>
+  <text x="550.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Back</text>
+  <rect x="602" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="606" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">7</text>
+  <text x="650.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Preview</text>
+  <rect x="702" y="426" width="96" height="52" fill="#0A0A0A" stroke="#222222" stroke-width="1" />
+  <text x="706" y="436" fill="#444344" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Menlo', monospace" font-size="8.5" font-weight="normal" text-anchor="start">8</text>
+  <text x="750.0" y="459" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Apply</text>
+  <rect x="0" y="0" width="800" height="28" fill="#080808" />
+  <line x1="0" y1="28" x2="800" y2="28" stroke="#222222" stroke-width="1" />
+  <text x="12" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="start">Sample Editor</text>
+  <text x="788" y="19" fill="#FFFFFF" font-family="'Inter', 'DejaVu Sans', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="end">1. Kick_909.wav</text>
+</svg>
